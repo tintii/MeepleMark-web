@@ -1,0 +1,38 @@
+{
+  "id": "a-solo-loss",
+  "specScenario": "a-solo-loss",
+  "description": "A flagged play has one player with win false; that player is reported as not having won.",
+  "input": {
+    "id": "g-solo-loss",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "flagged",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": null,
+        "totalIsOverridden": false,
+        "rankIsOverridden": false,
+        "win": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": null,
+        "rank": null,
+        "win": false
+      }
+    ],
+    "warnings": []
+  }
+}

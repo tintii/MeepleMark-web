@@ -1,0 +1,119 @@
+/*
+ * Design tokens, ported from DesignTokens/Sources/MeepleNMarkDesignTokens.
+ * Component CSS should reference these custom properties only — no literal
+ * colour, spacing, or radius values in component stylesheets. See
+ * src/tokens/README.md for the convention this mirrors on the TS side.
+ */
+
+:root {
+  /* --- Semantic colours (Color/SemanticColors.swift) — light values --- */
+  --color-surface-base: #fafafa;
+  --color-surface-elevated: #ffffff;
+  --color-text-primary: #141414;
+  --color-text-secondary: #5c5c63;
+  --color-border: #e0e0e5;
+  /* A restrained highlight for the table register (e.g. the leading
+     player's total) — deliberately muted, not a shell-bright accent. */
+  --color-score-emphasis: #8a6a1e;
+  --color-warning: #9a5b00;
+
+  /* --- Player palette (Color/PlayerPalette.swift + ShellAccents.swift's
+     shared hue swatches) --- Eight fill/foreground pairs, in cycle order
+     (index % 8). Fill and foreground are identical in light and dark —
+     these are saturated brights, not surface colours, so they don't
+     re-resolve per appearance. */
+  --color-player-1-fill: #ef9fa8; /* coralRed */
+  --color-player-1-foreground: #141414; /* nearBlack */
+  --color-player-2-fill: #f29306; /* amber */
+  --color-player-2-foreground: #141414;
+  --color-player-3-fill: #23a548; /* meadowGreen */
+  --color-player-3-foreground: #141414;
+  --color-player-4-fill: #1faeae; /* teal */
+  --color-player-4-foreground: #141414;
+  --color-player-5-fill: #1c71c1; /* skyBlue */
+  --color-player-5-foreground: #fafafa; /* nearWhite */
+  --color-player-6-fill: #7735b8; /* grapePurple */
+  --color-player-6-foreground: #fafafa;
+  --color-player-7-fill: #de42a0; /* hotPink */
+  --color-player-7-foreground: #141414;
+  --color-player-8-fill: #303b59; /* slateNavy */
+  --color-player-8-foreground: #fafafa;
+
+  /* --- Spacing (Layout/Scales.swift Spacing) --- */
+  --spacing-xxs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 32px;
+  --spacing-xxxl: 48px;
+
+  /* --- Corner radius (Layout/Scales.swift CornerRadius) --- */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+
+  /*
+   * --- Typography (Typography/TypeScale.swift) ---
+   * The Swift source only names these styles (displayLarge, title, body,
+   * caption, tableNumeral, tableLabel) and marks tableNumeral as requiring
+   * tabular figures — it defines no concrete sizes. The font-size/weight/
+   * line-height values below are NEW for this web port, invented for a
+   * reasonable web UI; they are not ported from anywhere.
+   */
+  --font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --type-display-large-size: 28px;
+  --type-display-large-weight: 700;
+  --type-display-large-line-height: 1.2;
+
+  --type-title-size: 20px;
+  --type-title-weight: 600;
+  --type-title-line-height: 1.3;
+
+  --type-body-size: 16px;
+  --type-body-weight: 400;
+  --type-body-line-height: 1.5;
+
+  --type-caption-size: 13px;
+  --type-caption-weight: 400;
+  --type-caption-line-height: 1.4;
+
+  --type-table-numeral-size: 16px;
+  --type-table-numeral-weight: 600;
+  --type-table-numeral-line-height: 1.3;
+
+  --type-table-label-size: 14px;
+  --type-table-label-weight: 500;
+  --type-table-label-line-height: 1.3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-base: #121214;
+    --color-surface-elevated: #1e1e22;
+    --color-text-primary: #f2f2f2;
+    --color-text-secondary: #a8a8b0;
+    --color-border: #38383e;
+    --color-score-emphasis: #e0c070;
+    --color-warning: #f2b84b;
+  }
+}
+
+body {
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-line-height);
+}
+
+/* The one style tabular figures are mandatory for — a total's on-screen
+   width must depend only on digit count, never on which digits appear. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

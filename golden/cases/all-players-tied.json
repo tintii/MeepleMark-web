@@ -1,0 +1,83 @@
+{
+  "id": "all-players-tied",
+  "specScenario": "all-players-tied",
+  "description": "Four players all have a total of 40; every derived rank is 1.",
+  "input": {
+    "id": "g-all-tied",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "40",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "40",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "40",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Dee",
+        "playerRef": null,
+        "categories": null,
+        "total": "40",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "40",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "40",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "40",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Dee",
+        "total": "40",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

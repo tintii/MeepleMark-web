@@ -1,0 +1,82 @@
+{
+  "id": "a-suspicious-duplicate",
+  "specScenario": "a-suspicious-duplicate",
+  "description": "Ranks manually set to 1, 1, 2 for players whose totals differ; a warning identifies the duplicate (the illegitimate tie also produces a gap warning, since the expected next rank after two players sharing rank 1 is 3, not 2).",
+  "input": {
+    "id": "g-suspicious-duplicate",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "75",
+        "totalIsOverridden": true,
+        "rank": 1,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": 1,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "51",
+        "totalIsOverridden": true,
+        "rank": 2,
+        "rankIsOverridden": true
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "75",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "62",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "51",
+        "rank": 2,
+        "win": null
+      }
+    ],
+    "warnings": [
+      {
+        "code": "duplicate-rank-unjustified",
+        "playerNames": [
+          "Alice",
+          "Bob"
+        ]
+      },
+      {
+        "code": "rank-gap-unjustified",
+        "playerNames": [
+          "Cara"
+        ]
+      }
+    ]
+  }
+}

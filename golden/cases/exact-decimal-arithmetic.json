@@ -1,0 +1,55 @@
+{
+  "id": "exact-decimal-arithmetic",
+  "specScenario": "exact-decimal-arithmetic",
+  "description": "A player has category values of 0.1 and 0.2; the computed total is exactly 0.3.",
+  "input": {
+    "id": "g-exact-decimal",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "two-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "a",
+          "label": "A"
+        },
+        {
+          "key": "b",
+          "label": "B"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "a": "0.1",
+          "b": "0.2"
+        },
+        "total": null,
+        "totalIsOverridden": false,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "0.3",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

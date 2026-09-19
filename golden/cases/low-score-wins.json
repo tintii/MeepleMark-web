@@ -1,0 +1,68 @@
+{
+  "id": "low-score-wins",
+  "specScenario": "low-score-wins",
+  "description": "Totals 12, 30, 45 with winDirection low rank as 1, 2, 3.",
+  "input": {
+    "id": "g-low-score-wins",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "low",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "12",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "30",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "45",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "12",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "30",
+        "rank": 2,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "45",
+        "rank": 3,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

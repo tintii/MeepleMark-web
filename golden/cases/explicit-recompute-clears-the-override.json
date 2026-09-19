@@ -1,0 +1,50 @@
+{
+  "id": "explicit-recompute-clears-the-override",
+  "specScenario": "explicit-recompute-clears-the-override",
+  "description": "Snapshot of a player after an explicit recompute: totalIsOverridden is false and total is the category sum (93).",
+  "input": {
+    "id": "g-recompute-cleared",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "one-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "a",
+          "label": "A"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "a": "93"
+        },
+        "total": null,
+        "totalIsOverridden": false,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "93",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

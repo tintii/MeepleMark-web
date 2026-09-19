@@ -1,0 +1,83 @@
+{
+  "id": "breaking-a-tie-by-hand",
+  "specScenario": "breaking-a-tie-by-hand",
+  "description": "Totals of 75, 62, 62, 51 have ranks manually set to 1, 2, 3, 4; the engine reports those ranks unchanged.",
+  "input": {
+    "id": "g-breaking-tie-by-hand",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "75",
+        "totalIsOverridden": true,
+        "rank": 1,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": 2,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": 3,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Dee",
+        "playerRef": null,
+        "categories": null,
+        "total": "51",
+        "totalIsOverridden": true,
+        "rank": 4,
+        "rankIsOverridden": true
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "75",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "62",
+        "rank": 2,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "62",
+        "rank": 3,
+        "win": null
+      },
+      {
+        "name": "Dee",
+        "total": "51",
+        "rank": 4,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "id": "a-suspicious-gap",
+  "specScenario": "a-suspicious-gap",
+  "description": "Ranks manually set to 1, 2, 5 with no tie to justify the gap; a warning identifies the gap.",
+  "input": {
+    "id": "g-suspicious-gap",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "75",
+        "totalIsOverridden": true,
+        "rank": 1,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": 2,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "51",
+        "totalIsOverridden": true,
+        "rank": 5,
+        "rankIsOverridden": true
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "75",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "62",
+        "rank": 2,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "51",
+        "rank": 5,
+        "win": null
+      }
+    ],
+    "warnings": [
+      {
+        "code": "rank-gap-unjustified",
+        "playerNames": [
+          "Cara"
+        ]
+      }
+    ]
+  }
+}

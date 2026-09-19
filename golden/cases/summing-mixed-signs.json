@@ -1,0 +1,55 @@
+{
+  "id": "summing-mixed-signs",
+  "specScenario": "summing-mixed-signs",
+  "description": "A player has category values of -1 and 10; the computed total is 9.",
+  "input": {
+    "id": "g-summing-mixed-signs",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "two-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "a",
+          "label": "A"
+        },
+        {
+          "key": "b",
+          "label": "B"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "a": "-1",
+          "b": "10"
+        },
+        "total": null,
+        "totalIsOverridden": false,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "9",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

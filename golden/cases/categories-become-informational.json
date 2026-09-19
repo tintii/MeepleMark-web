@@ -1,0 +1,67 @@
+{
+  "id": "categories-become-informational",
+  "specScenario": "categories-become-informational",
+  "description": "A player's overridden total of 100 disagrees with a category sum of 93; ranking uses 100.",
+  "input": {
+    "id": "g-categories-informational",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "one-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "a",
+          "label": "A"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "a": "93"
+        },
+        "total": "100",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": {
+          "a": "95"
+        },
+        "total": null,
+        "totalIsOverridden": false,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "100",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "95",
+        "rank": 2,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

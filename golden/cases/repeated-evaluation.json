@@ -1,0 +1,53 @@
+{
+  "id": "repeated-evaluation",
+  "specScenario": "repeated-evaluation",
+  "description": "A baseline play, used to confirm evaluating the same document twice is byte-for-byte identical.",
+  "input": {
+    "id": "g-repeated-evaluation",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "60",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "40",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "60",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "40",
+        "rank": 2,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

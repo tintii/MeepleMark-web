@@ -1,0 +1,68 @@
+{
+  "id": "a-mixed-result",
+  "specScenario": "a-mixed-result",
+  "description": "A flagged play has two players with win true and one with win false; accepted without warning.",
+  "input": {
+    "id": "g-mixed-result",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "flagged",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": null,
+        "totalIsOverridden": false,
+        "rankIsOverridden": false,
+        "win": true
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": null,
+        "totalIsOverridden": false,
+        "rankIsOverridden": false,
+        "win": true
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": null,
+        "totalIsOverridden": false,
+        "rankIsOverridden": false,
+        "win": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": null,
+        "rank": null,
+        "win": true
+      },
+      {
+        "name": "Bob",
+        "total": null,
+        "rank": null,
+        "win": true
+      },
+      {
+        "name": "Cara",
+        "total": null,
+        "rank": null,
+        "win": false
+      }
+    ],
+    "warnings": []
+  }
+}

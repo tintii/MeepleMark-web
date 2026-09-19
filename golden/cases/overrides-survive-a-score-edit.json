@@ -1,0 +1,53 @@
+{
+  "id": "overrides-survive-a-score-edit",
+  "specScenario": "overrides-survive-a-score-edit",
+  "description": "A player's rank is overridden to 2 despite an out-of-order total after another player's score was edited; the override is unchanged.",
+  "input": {
+    "id": "g-override-survives-edit",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "75",
+        "totalIsOverridden": true,
+        "rank": 1,
+        "rankIsOverridden": true
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "999",
+        "totalIsOverridden": true,
+        "rank": 2,
+        "rankIsOverridden": true
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "75",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "999",
+        "rank": 2,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

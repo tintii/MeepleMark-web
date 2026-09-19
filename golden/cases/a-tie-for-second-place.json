@@ -1,0 +1,83 @@
+{
+  "id": "a-tie-for-second-place",
+  "specScenario": "a-tie-for-second-place",
+  "description": "Totals 75, 62, 62, 51 with winDirection high rank as 1, 2, 2, 4.",
+  "input": {
+    "id": "g-tie-second",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": null,
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": null,
+        "total": "75",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Bob",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Cara",
+        "playerRef": null,
+        "categories": null,
+        "total": "62",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      },
+      {
+        "name": "Dee",
+        "playerRef": null,
+        "categories": null,
+        "total": "51",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "75",
+        "rank": 1,
+        "win": null
+      },
+      {
+        "name": "Bob",
+        "total": "62",
+        "rank": 2,
+        "win": null
+      },
+      {
+        "name": "Cara",
+        "total": "62",
+        "rank": 2,
+        "win": null
+      },
+      {
+        "name": "Dee",
+        "total": "51",
+        "rank": 4,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

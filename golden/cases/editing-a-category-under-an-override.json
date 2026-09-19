@@ -1,0 +1,54 @@
+{
+  "id": "editing-a-category-under-an-override",
+  "specScenario": "editing-a-category-under-an-override",
+  "description": "A player's total is overridden to 100; a category value is edited afterwards to 6. The total remains 100.",
+  "input": {
+    "id": "g-editing-under-override",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "two-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "a",
+          "label": "A"
+        },
+        {
+          "key": "b",
+          "label": "B"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "a": "6"
+        },
+        "total": "100",
+        "totalIsOverridden": true,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "100",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}

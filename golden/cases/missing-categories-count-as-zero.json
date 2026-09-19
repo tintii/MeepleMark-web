@@ -1,0 +1,71 @@
+{
+  "id": "missing-categories-count-as-zero",
+  "specScenario": "missing-categories-count-as-zero",
+  "description": "A template declares six categories; a player has values for only two of them, 5 and 3; total is 8.",
+  "input": {
+    "id": "g-missing-categories",
+    "playedAt": "2026-01-01T00:00:00Z",
+    "status": "complete",
+    "gameName": "Golden Test Game",
+    "gameRef": null,
+    "winDirection": "high",
+    "outcome": "ranked",
+    "scoring": {
+      "slug": "six-cat-game",
+      "version": 1,
+      "defaultOutcome": "ranked",
+      "categories": [
+        {
+          "key": "c1",
+          "label": "Category 1"
+        },
+        {
+          "key": "c2",
+          "label": "Category 2"
+        },
+        {
+          "key": "c3",
+          "label": "Category 3"
+        },
+        {
+          "key": "c4",
+          "label": "Category 4"
+        },
+        {
+          "key": "c5",
+          "label": "Category 5"
+        },
+        {
+          "key": "c6",
+          "label": "Category 6"
+        }
+      ]
+    },
+    "players": [
+      {
+        "name": "Alice",
+        "playerRef": null,
+        "categories": {
+          "c1": "5",
+          "c2": "3"
+        },
+        "total": null,
+        "totalIsOverridden": false,
+        "rank": null,
+        "rankIsOverridden": false
+      }
+    ],
+    "notes": null
+  },
+  "expected": {
+    "players": [
+      {
+        "name": "Alice",
+        "total": "8",
+        "rank": 1,
+        "win": null
+      }
+    ],
+    "warnings": []
+  }
+}
