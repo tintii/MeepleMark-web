@@ -1,18 +1,36 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
 import { PlayList } from "./pages/PlayList";
 import { NewPlay } from "./pages/NewPlay";
-import { PlayScoring } from "./pages/PlayScoring";
+import { PlayRoute } from "./pages/PlayRoute";
+import { Collection } from "./pages/Collection";
+import { GameDetail } from "./pages/GameDetail";
+import { TemplateEditor } from "./pages/TemplateEditor";
+import { Players } from "./pages/Players";
 
-// Minimal shell — just enough to prove the wiring end-to-end. No game
-// collection, no player directory, no scorepad/template grid yet: see
-// README.md's Status section.
+function NavShell() {
+  return (
+    <nav className="nav-shell">
+      <NavLink to="/" end>
+        Plays
+      </NavLink>
+      <NavLink to="/collection">Collection</NavLink>
+      <NavLink to="/players">Players</NavLink>
+    </nav>
+  );
+}
+
 export function App() {
   return (
     <BrowserRouter>
+      <NavShell />
       <Routes>
         <Route path="/" element={<PlayList />} />
         <Route path="/play/new" element={<NewPlay />} />
-        <Route path="/play/:id" element={<PlayScoring />} />
+        <Route path="/play/:id" element={<PlayRoute />} />
+        <Route path="/collection" element={<Collection />} />
+        <Route path="/collection/:gameId" element={<GameDetail />} />
+        <Route path="/collection/:gameId/template" element={<TemplateEditor />} />
+        <Route path="/players" element={<Players />} />
       </Routes>
     </BrowserRouter>
   );

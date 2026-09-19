@@ -16,6 +16,13 @@
      player's total) — deliberately muted, not a shell-bright accent. */
   --color-score-emphasis: #8a6a1e;
   --color-warning: #9a5b00;
+  /* New for this web port — the Swift DesignTokens package has no
+     dedicated "destructive" semantic colour (SwiftUI's `role: .destructive`
+     resolves to the platform's system red instead). "Remove from
+     collection" is a genuinely new semantic role on the web, so this adds
+     one custom property rather than reusing --color-warning (amber) or a
+     literal in component CSS. */
+  --color-destructive: #b3261e;
 
   /* --- Player palette (Color/PlayerPalette.swift + ShellAccents.swift's
      shared hue swatches) --- Eight fill/foreground pairs, in cycle order
@@ -89,6 +96,13 @@
   --type-table-label-size: 14px;
   --type-table-label-weight: 500;
   --type-table-label-line-height: 1.3;
+
+  /* The scorepad grid's pinned category-label column: roughly 16
+     characters at the table-label font size (ScorepadGridView.swift's
+     `categoryColumnWidth`). `ch` is relative to the element's own
+     font-size, so this is paired with --type-table-label-size on
+     .scorepad-pinned rather than a literal px width. */
+  --scorepad-label-column-width: 16ch;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -100,6 +114,7 @@
     --color-border: #38383e;
     --color-score-emphasis: #e0c070;
     --color-warning: #f2b84b;
+    --color-destructive: #f2b8b5;
   }
 }
 

@@ -6,12 +6,20 @@ import {
   createGame,
   createPlayer,
   deleteTemplate,
+  existingGameByName,
+  findOrCreateGame,
   getGame,
   listPlays,
+  listPlaySummaries,
   makeUniqueCategories,
+  playsForGame,
   PlayReadError,
+  quickPickGames,
   readPlay,
+  recentGameRefs,
+  recentPlayerNames,
   removeFromCollection,
+  renamePlayer,
   representSameGame,
   representSamePlayer,
   resetDbConnectionForTests,
@@ -101,6 +109,159 @@ describe("games", () => {
     const c = await createGame({ name: "Wingspan", origin: "custom" });
     expect(representSameGame(a, b)).toBe(true);
     expect(representSameGame(a, c)).toBe(false);
+  });
+
+  describe("existingGameByName / findOrCreateGame", () => {
+    it("existingGameByName returns undefined for no match, without creating anything", async () => {
+      expect(await existingGameByName("Nobody's Game")).toBeUndefined();
+      expect((await listPlays()).length).toBe(0);
+      expect(await (await getDb()).getAll("games")).toEqual([]);
+    });
+
+    it("findOrCreateGame reuses an exact match", async () => {
+      const original = await createGame({ name: "Wingspan", origin: "corpus", slug: "wingspan" });
+      const found = await findOrCreateGame("Wingspan");
+      expect(found.id).toBe(original.id);
+    });
+
+    it("findOrCreateGame reuses a case-insensitive match, whatever case it was stored in", async () => {
+      const original = await createGame({ name: "Wingspan", origin: "custom" });
+      const found = await findOrCreateGame("wingspan");
+      expect(found.id).toBe(original.id);
+      expect(found.name).toBe("Wingspan");
+    });
+
+    it("findOrCreateGame creates exactly one custom game for a brand-new name", async () => {
+      const created = await findOrCreateGame("Brand New Game");
+      expect(created.origin).toBe("custom");
+      expect(created.ownedAt).toBeNull(); // never touches the collection
+      const again = await findOrCreateGame("Brand New Game");
+      expect(again.id).toBe(created.id);
+      const all = await (await getDb()).getAll("games");
+      expect(all.length).toBe(1);
+    });
+  });
+
+  describe("quickPickGames", () => {
+    it("orders most-recently-played first, then owned-but-never-played alphabetically", async () => {
+      const zeta = await createGame({ name: "Zeta", origin: "custom" });
+      await addToCollection(zeta.id); // owned, never played
+      const azul = await createGame({ name: "Azul", origin: "custom" });
+      await addToCollection(azul.id); // owned, never played
+
+      const played = await createGame({ name: "Played Game", origin: "custom" });
+      const play = await createDraftPlay({
+        gameName: played.name,
+        gameRef: played.id,
+        winDirection: "high",
+        outcome: "ranked",
+        playerNames: ["Alice"],
+      });
+      play.playedAt = "2026-01-01T00:00:00Z";
+      await writePlay(play);
+
+      const picks = await quickPickGames();
+      expect(picks.map((g) => g.name)).toEqual(["Played Game", "Azul", "Zeta"]);
+    });
+  });
+
+  describe("playsForGame / recentGameRefs / recentPlayerNames / listPlaySummaries", () => {
+    it("playsForGame returns a game's plays, most recent first", async () => {
+      const game = await createGame({ name: "Wingspan", origin: "custom" });
+      const older = await createDraftPlay({
+        gameName: game.name, gameRef: game.id, winDirection: "high", outcome: "ranked", playerNames: ["Alice"],
+      });
+      older.playedAt = "2020-01-01T00:00:00Z";
+      await writePlay(older);
+      const newer = await createDraftPlay({
+        gameName: game.name, gameRef: game.id, winDirection: "high", outcome: "ranked", playerNames: ["Bob"],
+      });
+      newer.playedAt = "2026-01-01T00:00:00Z";
+      await writePlay(newer);
+
+      const plays = await playsForGame(game.id);
+      expect(plays.map((p) => p.id)).toEqual([newer.id, older.id]);
+    });
+
+    it("recentGameRefs returns distinct refs, most recent first", async () => {
+      const gameA = await createGame({ name: "A", origin: "custom" });
+      const gameB = await createGame({ name: "B", origin: "custom" });
+      const p1 = await createDraftPlay({ gameName: "A", gameRef: gameA.id, winDirection: "high", outcome: "ranked", playerNames: ["Alice"] });
+      p1.playedAt = "2020-01-01T00:00:00Z";
+      await writePlay(p1);
+      const p2 = await createDraftPlay({ gameName: "B", gameRef: gameB.id, winDirection: "high", outcome: "ranked", playerNames: ["Alice"] });
+      p2.playedAt = "2021-01-01T00:00:00Z";
+      await writePlay(p2);
+      const p3 = await createDraftPlay({ gameName: "A", gameRef: gameA.id, winDirection: "high", outcome: "ranked", playerNames: ["Alice"] });
+      p3.playedAt = "2022-01-01T00:00:00Z";
+      await writePlay(p3);
+
+      expect(await recentGameRefs()).toEqual([gameA.id, gameB.id]);
+    });
+
+    it("recentPlayerNames is distinct, drawn from the most recent plays, and skips corrupted ones", async () => {
+      const p1 = await createDraftPlay({ gameName: "A", winDirection: "high", outcome: "ranked", playerNames: ["Alice", "Bob"] });
+      p1.playedAt = "2020-01-01T00:00:00Z";
+      await writePlay(p1);
+      const p2 = await createDraftPlay({ gameName: "B", winDirection: "high", outcome: "ranked", playerNames: ["Cara", "Alice"] });
+      p2.playedAt = "2021-01-01T00:00:00Z";
+      await writePlay(p2);
+
+      expect(await recentPlayerNames()).toEqual(["Cara", "Alice", "Bob"]);
+      expect(await recentPlayerNames(1)).toEqual(["Cara", "Alice"]);
+    });
+
+    it("listPlaySummaries reports a corrupted play as unreadable rather than throwing", async () => {
+      const good = await createDraftPlay({ gameName: "Good", winDirection: "high", outcome: "ranked", playerNames: ["Alice"] });
+      good.playedAt = "2020-01-01T00:00:00Z";
+      await writePlay(good);
+
+      const db = await getDb();
+      await db.put("plays", {
+        id: "corrupt-1",
+        playedAt: "2021-01-01T00:00:00Z",
+        status: "draft",
+        gameName: "Corrupt",
+        gameRef: null,
+        play: { not: "a valid play" },
+      });
+
+      const summaries = await listPlaySummaries();
+      expect(summaries.map((s) => s.gameName)).toEqual(["Corrupt", "Good"]);
+      expect(summaries[0].unreadable).toBe(true);
+      expect(summaries[0].playerCount).toBeNull();
+      expect(summaries[1].unreadable).toBe(false);
+      expect(summaries[1].playerCount).toBe(1);
+    });
+
+    it("listPlaySummaries only shows a winner line once the play is complete", async () => {
+      const play = await createDraftPlay({ gameName: "A", winDirection: "high", outcome: "ranked", playerNames: ["Alice"] });
+      let [summary] = await listPlaySummaries();
+      expect(summary.winnerLine).toBeNull();
+
+      play.status = "complete";
+      play.players[0].total = new Decimal(10);
+      play.players[0].totalIsOverridden = true;
+      await writePlay(play);
+
+      [summary] = await listPlaySummaries();
+      expect(summary.winnerLine).toBe("Alice won.");
+    });
+  });
+});
+
+describe("players extras", () => {
+  it("renamePlayer trims and persists a new display name", async () => {
+    const player = await createPlayer({ displayName: "Alice" });
+    await renamePlayer(player.id, "  Alicia  ");
+    const db = await getDb();
+    const reloaded = await db.get("players", player.id);
+    expect(reloaded.displayName).toBe("Alicia");
+  });
+
+  it("renamePlayer rejects an empty name", async () => {
+    const player = await createPlayer({ displayName: "Alice" });
+    await expect(renamePlayer(player.id, "   ")).rejects.toThrow();
   });
 });
 

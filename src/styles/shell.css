@@ -112,3 +112,256 @@ fieldset {
   color: var(--color-warning);
   font-size: var(--type-caption-size);
 }
+
+/* --- Top nav shell --- */
+
+.nav-shell {
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.page-wide.page {
+  max-width: 960px;
+}
+
+.nav-shell a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: var(--type-body-size);
+}
+
+.nav-shell a.active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* --- Play rows (shared by the play list and a game's play history) --- */
+
+.play-row {
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.play-row-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.play-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.play-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xxs);
+}
+
+.badge-draft {
+  font-size: var(--type-table-label-size);
+  font-weight: var(--type-table-label-weight);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-base);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+.warning-text {
+  color: var(--color-warning);
+}
+
+.empty-state {
+  padding: var(--spacing-xl) 0;
+}
+
+/* --- Marker badge (colour + letter; see assignRoster()) --- */
+
+.marker-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-xl);
+  height: var(--spacing-xl);
+  border-radius: var(--radius-pill);
+  font-size: var(--type-table-label-size);
+  font-weight: var(--type-table-label-weight);
+}
+
+/* --- Destructive actions --- */
+
+.destructive-section {
+  margin-top: var(--spacing-xl);
+}
+
+.destructive-button {
+  color: var(--color-destructive);
+  border-color: var(--color-destructive);
+}
+
+.destructive-button:hover {
+  border-color: var(--color-destructive);
+}
+
+/* --- Dialog (completion confirmation, collection offer, remove confirm) --- */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  z-index: 10;
+}
+
+.dialog {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 400px;
+  width: 100%;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  justify-content: flex-end;
+}
+
+/* --- New-play suggestions and score-sheet summary --- */
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.suggestion-chip {
+  font-size: var(--type-caption-size);
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--radius-pill);
+}
+
+.action-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.score-sheet-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--type-table-label-size);
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rank-input {
+  width: 70px;
+}
+
+/* --- Scorepad grid (templated scoring): category rows x player columns.
+   .scorepad-pinned and .scorepad-scroll are SIBLINGS of .scorepad-grid —
+   the pinned column must never be a child of the scrolling region, or it
+   scrolls away with it (see PlayScorepadGrid.tsx's doc comment). --- */
+
+.scorepad-grid {
+  display: flex;
+  align-items: flex-start;
+  margin: var(--spacing-lg) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.scorepad-pinned {
+  flex: 0 0 var(--scorepad-label-column-width);
+  width: var(--scorepad-label-column-width);
+  font-size: var(--type-table-label-size);
+  background: var(--color-surface-elevated);
+  border-right: 1px solid var(--color-border);
+}
+
+.scorepad-scroll {
+  flex: 1 1 auto;
+  overflow-x: auto;
+}
+
+.scorepad-players {
+  display: flex;
+}
+
+.scorepad-player-column {
+  flex: 0 0 auto;
+  width: 130px;
+  border-right: 1px solid var(--color-border);
+}
+
+.scorepad-cell {
+  min-height: var(--spacing-xxxl);
+  padding: var(--spacing-xxs) var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.scorepad-total-cell {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-xxs);
+}
+
+.scorepad-label-cell {
+  font-weight: var(--type-table-label-weight);
+  align-items: flex-start;
+  /* No truncation: a category label wraps onto as many lines as it
+     needs rather than being cut off — never add text-overflow/line-clamp
+     here. */
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.scorepad-header-cell {
+  font-size: var(--type-body-size);
+  gap: var(--spacing-xs);
+}
+
+.scorepad-cell input {
+  width: 100%;
+}
+
+.manual-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+}

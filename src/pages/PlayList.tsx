@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listPlays } from "../storage/db";
+import { listPlaySummaries, type PlaySummary } from "../storage/db";
+import { PlayRowItem } from "../components/PlayRowItem";
 
-interface Row {
-  id: string;
-  gameName: string;
-  playedAt: string;
-  status: string;
-}
-
-/** `/` — read all plays, sorted by playedAt descending, show game + date + status. */
+/** `/` — every play, most recent first, with each row's winner line once complete. */
 export function PlayList() {
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<PlaySummary[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    listPlays().then((plays) => {
-      if (cancelled) return;
-      setRows(plays.map((p) => ({ id: p.id, gameName: p.gameName, playedAt: p.playedAt, status: p.status })));
+    listPlaySummaries().then((summaries) => {
+      if (!cancelled) setRows(summaries);
     });
     return () => {
       cancelled = true;
@@ -28,19 +21,20 @@ export function PlayList() {
     <div className="page">
       <h1 className="type-title">Plays</h1>
       <Link to="/play/new">
-        <button type="button">New play</button>
+        <button type="button">Add Play</button>
       </Link>
 
       {rows === null && <p className="type-caption">Loading…</p>}
-      {rows !== null && rows.length === 0 && <p className="type-caption">No plays recorded yet.</p>}
+      {rows !== null && rows.length === 0 && (
+        <div className="empty-state">
+          <p className="type-title">No plays yet</p>
+          <p className="type-caption">Start a play — no account, no setup.</p>
+        </div>
+      )}
       {rows !== null && rows.length > 0 && (
         <ul className="play-list">
           {rows.map((row) => (
-            <li key={row.id}>
-              <Link to={`/play/${row.id}`}>
-                <strong>{row.gameName}</strong> — {new Date(row.playedAt).toLocaleDateString()} — {row.status}
-              </Link>
-            </li>
+            <PlayRowItem key={row.id} row={row} />
           ))}
         </ul>
       )}

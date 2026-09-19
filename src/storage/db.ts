@@ -2,6 +2,8 @@ import { openDB, type IDBPDatabase } from "idb";
 import type { Category, OutcomeMode, Play, PlayStatus, Template, WinDirection } from "../engine/models";
 import { decodePlay, encodePlay } from "../engine/models";
 import { PlayValidation, type ValidationIssue } from "../engine/validation";
+import { evaluate } from "../engine/evaluate";
+import { winnerSummarySentence } from "../engine/winnerSummary";
 
 // Storage, deliberately simplified relative to the Swift Persistence
 // package. Reads for shape from Game.swift / PlayRecord.swift / Player.swift
@@ -136,6 +138,124 @@ export async function listPlays(): Promise<PlayRow[]> {
   const db = await getDb();
   const rows = (await db.getAll("plays")) as PlayRow[];
   return rows.sort((a, b) => (a.playedAt < b.playedAt ? 1 : a.playedAt > b.playedAt ? -1 : 0));
+}
+
+/**
+ * A row-ready summary of a play: what the play list and a game's play
+ * history both need to render one row, including the winner line (only
+ * ever populated for a `complete` play — see WinnerRow.swift's rule that a
+ * draft never claims a result). `playerCount`/`winnerLine` are `null` and
+ * `unreadable` is `true` when the stored document fails to decode — this
+ * mirrors PlayRowView.swift's "Unreadable" row rather than throwing, since
+ * one corrupted play must never take down the whole list.
+ */
+export interface PlaySummary {
+  id: string;
+  gameName: string;
+  playedAt: string;
+  status: PlayStatus;
+  playerCount: number | null;
+  winnerLine: string | null;
+  unreadable: boolean;
+}
+
+function summaryFromPlay(play: Play): PlaySummary {
+  const winnerLine = play.status === "complete" ? winnerSummarySentence(evaluate(play), play.outcome) : null;
+  return {
+    id: play.id,
+    gameName: play.gameName,
+    playedAt: play.playedAt,
+    status: play.status,
+    playerCount: play.players.length,
+    winnerLine,
+    unreadable: false,
+  };
+}
+
+function unreadableSummary(row: PlayRow): PlaySummary {
+  return {
+    id: row.id,
+    gameName: row.gameName,
+    playedAt: row.playedAt,
+    status: row.status,
+    playerCount: null,
+    winnerLine: null,
+    unreadable: true,
+  };
+}
+
+/** Every play as a row-ready summary, most recent first. */
+export async function listPlaySummaries(): Promise<PlaySummary[]> {
+  const rows = await listPlays();
+  return rows.map((row) => {
+    try {
+      return summaryFromPlay(decodePlay(row.play));
+    } catch {
+      return unreadableSummary(row);
+    }
+  });
+}
+
+/**
+ * A game's plays, most recent first — a filter over `listPlays()`, not a
+ * stored relationship (mirrors `PlayQuery.plays(forGame:)`). A play that
+ * fails to decode is skipped rather than thrown: this is a listing
+ * surface, not a read path that must surface corruption.
+ */
+export async function playsForGame(gameRef: string): Promise<Play[]> {
+  const rows = (await listPlays()).filter((row) => row.gameRef === gameRef);
+  const plays: Play[] = [];
+  for (const row of rows) {
+    try {
+      plays.push(decodePlay(row.play));
+    } catch {
+      // skip — see the doc comment above.
+    }
+  }
+  return plays;
+}
+
+/**
+ * Distinct `gameRef` values from plays, most-recent-`playedAt` first.
+ * Mirrors `PlayQuery.recentGameRefs`.
+ */
+export async function recentGameRefs(): Promise<string[]> {
+  const rows = await listPlays(); // already sorted descending by playedAt
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const row of rows) {
+    if (!row.gameRef || seen.has(row.gameRef)) continue;
+    seen.add(row.gameRef);
+    ordered.push(row.gameRef);
+  }
+  return ordered;
+}
+
+/**
+ * Distinct player names drawn from the `limit` most recent plays' decoded
+ * documents. A suggestion list, not a read path that must surface
+ * corruption — a play that fails to decode is skipped rather than thrown
+ * (mirrors `PlayQuery.recentPlayerNames`).
+ */
+export async function recentPlayerNames(limit = 20): Promise<string[]> {
+  const rows = (await listPlays()).slice(0, limit);
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const row of rows) {
+    let play: Play;
+    try {
+      play = decodePlay(row.play);
+    } catch {
+      continue;
+    }
+    for (const player of play.players) {
+      if (!seen.has(player.name)) {
+        seen.add(player.name);
+        names.push(player.name);
+      }
+    }
+  }
+  return names;
 }
 
 export interface NewPlayInput {
@@ -341,6 +461,62 @@ export async function deleteTemplate(gameId: string): Promise<void> {
   await db.put("games", { ...game, localTemplate: null, templateVersion: 0 });
 }
 
+/**
+ * A read-only lookup by typed name, for offering a game's local template
+ * (if any) before the play — and therefore the Game row itself — is
+ * created. Exact match first, then a case-insensitive scan. Never creates
+ * anything: a name nobody has typed before simply has no template to
+ * offer. Mirrors `GameQuery.existingGame(named:)`.
+ */
+export async function existingGameByName(name: string): Promise<GameRecord | undefined> {
+  const trimmed = name.trim();
+  if (!trimmed) return undefined;
+  const games = await listGames();
+  const exact = games.find((g) => g.name === trimmed);
+  if (exact) return exact;
+  return games.find((g) => g.name.toLowerCase() === trimmed.toLowerCase());
+}
+
+/**
+ * Ensures a Game exists for a typed name, reusing a trimmed,
+ * case-insensitive name match rather than creating a duplicate on every
+ * retype. A new name creates exactly one `custom` Game; an existing name
+ * is reused as-is, whatever its origin and whatever case it was originally
+ * stored in. Never touches the collection — creating or reusing a Game
+ * here must not add it to the collection. Mirrors
+ * `GameQuery.findOrCreateGame(named:)`.
+ */
+export async function findOrCreateGame(name: string): Promise<GameRecord> {
+  const trimmed = name.trim();
+  const existing = await existingGameByName(trimmed);
+  if (existing) return existing;
+  return createGame({ name: trimmed, origin: "custom" });
+}
+
+/**
+ * Quick-pick: the union of most-recently-played games (most recent first,
+ * de-duplicated) followed by owned-but-never-played games (alphabetical).
+ * Mirrors `GameQuery.quickPick`'s ordering exactly.
+ */
+export async function quickPickGames(): Promise<GameRecord[]> {
+  const seen = new Set<string>();
+  const ordered: GameRecord[] = [];
+
+  for (const ref of await recentGameRefs()) {
+    const game = await getGame(ref);
+    if (!game || seen.has(game.id)) continue;
+    seen.add(game.id);
+    ordered.push(game);
+  }
+
+  const neverPlayedOwned = (await listGames())
+    .filter((g) => g.ownedAt != null && !seen.has(g.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  ordered.push(...neverPlayedOwned);
+
+  return ordered;
+}
+
 /** Keys on `slug`/`bggThingId` only — `id` never enters this comparison. */
 export function representSameGame(a: GameRecord, b: GameRecord): boolean {
   if (a.slug != null && b.slug != null && a.slug === b.slug) return true;
@@ -385,4 +561,13 @@ export async function createPlayer(input: NewPlayerInput): Promise<PlayerRecord>
 export function representSamePlayer(a: PlayerRecord, b: PlayerRecord): boolean {
   if (a.bggUsername == null || b.bggUsername == null) return false;
   return a.bggUsername === b.bggUsername;
+}
+
+export async function renamePlayer(id: string, displayName: string): Promise<void> {
+  const trimmed = displayName.trim();
+  if (!trimmed) throw new Error("displayName must not be empty");
+  const db = await getDb();
+  const player = (await db.get("players", id)) as PlayerRecord | undefined;
+  if (!player) throw new Error(`no player with id '${id}'`);
+  await db.put("players", { ...player, displayName: trimmed });
 }
