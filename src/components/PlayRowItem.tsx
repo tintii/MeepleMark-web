@@ -25,7 +25,7 @@ export interface PlayRowData {
  * corrupted play surfaces as "Unreadable" rather than a fabricated count
  * (mirrors PlayRowView.swift).
  */
-export function PlayRowItem({ row }: { row: PlayRowData }) {
+export function PlayRowItem({ row, onDelete }: { row: PlayRowData; onDelete?: (row: PlayRowData) => void }) {
   return (
     <li className="play-row">
       <Link to={`/play/${row.id}`} className="play-row-link">
@@ -45,6 +45,16 @@ export function PlayRowItem({ row }: { row: PlayRowData }) {
           {row.status === "draft" && <span className="badge-draft">Draft</span>}
         </div>
       </Link>
+      {onDelete && (
+        <button
+          type="button"
+          className="link-button destructive-button play-row-delete"
+          aria-label={`Delete ${row.gameName} play from ${new Date(row.playedAt).toLocaleDateString()}`}
+          onClick={() => onDelete(row)}
+        >
+          Delete
+        </button>
+      )}
     </li>
   );
 }

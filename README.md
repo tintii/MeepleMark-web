@@ -1,8 +1,14 @@
 # meeplemark-web
 
-A frontend-only browser port of **Meeple N Mark / MeepleMark**, an iOS
-board-game scorepad. No backend, no server code, no accounts — everything
-runs in the browser, and data is stored locally in IndexedDB.
+A browser implementation of **Meeple N Mark / MeepleMark**, a board-game
+scorepad. The current build runs entirely in the browser and stores data
+locally in IndexedDB; accounts and a backend are not implemented yet.
+
+**Direction as of 2026-09-26:** prioritize the web app for phones and desktops,
+with a leaning toward web-only delivery. Plan self-hosted PostgreSQL persistence,
+separate user accounts and player records, and eventual Docker/Compose deployment.
+See [the persistence roadmap](docs/self-hosted-persistence.md) for the architecture,
+iOS impact, and decisions still open. This is future work, not current capability.
 
 This is a fresh, standalone repository, not a subdirectory of the Swift
 project. The scoring engine, ranking rules, design tokens, and storage
@@ -18,7 +24,9 @@ time.
 - `decimal.js` for exact decimal arithmetic (scores are never plain JS
   numbers)
 - `idb` for IndexedDB storage
-- `react-router-dom` for the three-route shell
+- `react-router-dom` for the route shell
+- Workbox via `vite-plugin-pwa` for generated production precaching
+- Playwright for Chromium/WebKit journeys and responsive screenshots
 
 No CDN scripts or fonts — everything is bundled through npm/Vite.
 
@@ -30,6 +38,7 @@ npm run dev        # http://localhost:5173
 npm test           # vitest run — engine, ranking, tokens, storage
 npm run build      # static bundle in dist/
 npm run preview    # serve the build
+npm run test:browser # production-preview journeys (Chromium + WebKit)
 ```
 
 ## Status
@@ -117,20 +126,50 @@ npm run preview    # serve the build
       stays pinned rather than scrolling away; labels wrap instead of
       truncating (no ellipsis/line-clamp anywhere in that column).
 
-### Not yet built
+### iOS parity and browser adaptations
 
-- Any BGG integration (reads, writes, the application token's local-only
-  corpus-build usage) — out of scope for this phase, and not yet built on
-  the iOS side either.
-- Accessibility pass (the Swift side's greyscale-attributability and
-  contrast-ratio guarantees are ported as logic/tokens; the marker badge's
-  letter channel is wired into the UI, but there's been no rendered-UI
-  audit — screen reader labeling, focus order, dialog trapping, etc.).
-- The visual polish the iOS app has — this phase proves the wiring and the
-  UX contract (routing, pinning, confirmation flows), not pixel-level
-  design. The one-player-per-screen accessibility-text-size layout for the
-  scorepad grid (`ScorepadGridView.swift`'s `onePlayerPerScreenBody`) has no
-  web equivalent yet.
+The parity baseline is iOS commit `4b5300a`. The web app now includes direct
+collection entry, confirmed play/player deletion, complete player metadata,
+saved-player identity selection, unlinked history suggestions, category
+reordering, manual override indicators, and explicit win/loss controls.
+
+Phone browsers use labelled bottom navigation and single-player category
+scoring by default. Larger layouts retain persistent top navigation and an
+aligned, horizontally scrollable category table. Both scoring layouts use the
+same draft state, ordered writes, retryable errors, durable completion, and
+unfinished-number protection. See `docs/verification.md` for the source matrix
+and `e2e/*-snapshots/` for rendered evidence.
+
+Accounts, server persistence, and cross-browser synchronization were outside
+the completed parity change and are now a separate planned workstream in the
+[persistence roadmap](docs/self-hosted-persistence.md). BGG requests/authentication,
+general import/export, and native packaging remain outside that workstream.
+BGG usernames are local metadata in the current build.
+
+## Offline use and static hosting
+
+Production builds generate a versioned application-shell precache. Registration
+is limited to production on HTTPS (localhost is allowed for testing), and
+“Ready for offline use” appears only after precaching succeeds. After that,
+known app routes can reopen offline and all core data operations continue to use
+IndexedDB. A first visit still requires connectivity. Clearing browser/site
+data, private-mode eviction, or browser storage pressure can remove local data;
+offline support is not backup or sync.
+
+The static host must:
+
+1. serve the build over HTTPS;
+2. return `index.html` for these navigation routes only: `/`, `/play/*`,
+   `/collection`, `/collection/*`, and `/players`;
+3. serve real assets with their normal status and MIME type—missing JS/CSS/image
+   requests must remain 404s and must not receive `index.html`;
+4. avoid caching `index.html`, `sw.js`, or `manifest.webmanifest` indefinitely;
+   hashed files under `assets/` may be cached immutably.
+
+Vite preview validates the production artifact and local fallback behaviour,
+but it is not deployment verification. A fresh-browser deep-link check must be
+run against the selected host so an existing service worker cannot mask a bad
+rewrite rule.
 
 ## Repository layout
 

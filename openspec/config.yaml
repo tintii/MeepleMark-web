@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Meeple N Mark is a web-first board-game scorepad, prioritizing phone browsers
+  and desktop. Web-only delivery is the product owner's leaning, not a final
+  native-retirement decision. See docs/self-hosted-persistence.md (2026-09-26).
+  Current implementation: React, Vite, TypeScript, decimal.js, IndexedDB and
+  production application-shell caching. The ios-parity-responsive-web checklist
+  is complete; its no-backend scope describes that phase, not future constraints.
+  Next architecture direction: self-hosted application API and PostgreSQL,
+  separate authenticated users and account-owned player records, retained local
+  offline entry, and eventual Docker/Compose delivery. These are not implemented.
+  The self-hosted-accounts-and-sync proposal specifies the next phase, defaulting
+  to operator-created local accounts, guest use, explicit revision conflicts and
+  deliberate local-data adoption. These defaults remain proposed, not shipped.
+  Preserve exact decimal strings, sticky overrides,
+  embedded template snapshots, historical names and the golden engine contract.
+  Do not infer native sync, cross-installation sync, BGG integration or deployment
+  from this direction. Distinguish roadmap choices from existing capabilities.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours

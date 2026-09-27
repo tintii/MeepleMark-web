@@ -128,7 +128,7 @@ export function setRank(play: Play, playerIndex: number, text: string): Play | n
 }
 
 /** A cooperative/solo play's win flag. */
-export function setWin(play: Play, playerIndex: number, won: boolean): Play {
+export function setWin(play: Play, playerIndex: number, won: boolean | null): Play {
   return updatePlayerAt(play, playerIndex, (p) => ({ ...p, win: won }));
 }
 

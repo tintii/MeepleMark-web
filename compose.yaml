@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-meeplemark}
+      POSTGRES_USER: ${POSTGRES_USER:-meeplemark}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD at runtime}
+    volumes: [meeplemark-db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: .
+    command: ["node", "dist-server/migrate-entry.js"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-meeplemark}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-meeplemark}
+      SESSION_SECRET: ${SESSION_SECRET}
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-meeplemark}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-meeplemark}
+      SESSION_SECRET: ${SESSION_SECRET}
+      APP_ORIGIN: ${APP_ORIGIN}
+    ports: ["127.0.0.1:${APP_PORT:-8787}:8787"]
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  meeplemark-db:

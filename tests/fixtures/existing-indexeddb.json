@@ -1,0 +1,106 @@
+{
+  "database": "meeplemark",
+  "version": 1,
+  "games": [
+    {
+      "id": "fixture-game",
+      "name": "Fixture Garden",
+      "slug": null,
+      "bggThingId": null,
+      "origin": "custom",
+      "ownedAt": "2026-01-01T00:00:00.000Z",
+      "localTemplate": {
+        "slug": "local:fixture-game",
+        "version": 2,
+        "winDirection": "high",
+        "defaultOutcome": "ranked",
+        "categories": [
+          { "key": "flowers", "label": "Flowers" },
+          { "key": "paths", "label": "Paths" }
+        ]
+      },
+      "templateVersion": 2
+    }
+  ],
+  "players": [
+    {
+      "id": "fixture-player",
+      "displayName": "Avery",
+      "bggUsername": null,
+      "preferredColorIndex": 4
+    }
+  ],
+  "plays": [
+    {
+      "id": "fixture-plain",
+      "playedAt": "2026-01-02T10:00:00.000Z",
+      "status": "complete",
+      "gameName": "Loose Notes",
+      "gameRef": null,
+      "play": {
+        "id": "fixture-plain",
+        "playedAt": "2026-01-02T10:00:00.000Z",
+        "status": "complete",
+        "gameName": "Loose Notes",
+        "gameRef": null,
+        "winDirection": "low",
+        "outcome": "flagged",
+        "scoring": null,
+        "players": [
+          {
+            "name": "Guest",
+            "total": "-1.5",
+            "totalIsOverridden": true,
+            "rankIsOverridden": false,
+            "win": false
+          }
+        ],
+        "notes": null
+      }
+    },
+    {
+      "id": "fixture-category",
+      "playedAt": "2026-01-03T10:00:00.000Z",
+      "status": "draft",
+      "gameName": "Fixture Garden",
+      "gameRef": "fixture-game",
+      "play": {
+        "id": "fixture-category",
+        "playedAt": "2026-01-03T10:00:00.000Z",
+        "status": "draft",
+        "gameName": "Fixture Garden",
+        "gameRef": "fixture-game",
+        "winDirection": "high",
+        "outcome": "ranked",
+        "scoring": {
+          "slug": "local:fixture-game",
+          "version": 1,
+          "defaultOutcome": "ranked",
+          "categories": [
+            { "key": "flowers", "label": "Flowers" },
+            { "key": "paths", "label": "Paths" }
+          ]
+        },
+        "players": [
+          {
+            "name": "Avery at the time",
+            "playerRef": "fixture-player",
+            "categories": { "flowers": "0.1", "paths": "0.2" },
+            "total": "4",
+            "totalIsOverridden": true,
+            "rank": 1,
+            "rankIsOverridden": true
+          },
+          {
+            "name": "Unlinked guest",
+            "total": null,
+            "totalIsOverridden": false,
+            "rank": null,
+            "rankIsOverridden": false
+          }
+        ],
+        "notes": null
+      }
+    }
+  ]
+}

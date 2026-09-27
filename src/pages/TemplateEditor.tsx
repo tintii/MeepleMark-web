@@ -4,6 +4,7 @@ import { deleteTemplate, getGame, setTemplate, type GameRecord } from "../storag
 import { TemplateValidation } from "../engine/validation";
 import { buildTemplateCandidate } from "../draft/templateCandidate";
 import type { OutcomeMode, WinDirection } from "../engine/models";
+import { PageHeader } from "../components/PageHeader";
 
 const CATEGORY_CAP = 10;
 
@@ -62,6 +63,16 @@ export function TemplateEditor() {
     setLabels((ls) => (ls.length > 1 ? ls.filter((_, i) => i !== index) : ls));
   }
 
+  function moveCategory(index: number, direction: -1 | 1) {
+    setLabels((current) => {
+      const destination = index + direction;
+      if (destination < 0 || destination >= current.length) return current;
+      const reordered = [...current];
+      [reordered[index], reordered[destination]] = [reordered[destination], reordered[index]];
+      return reordered;
+    });
+  }
+
   const currentGame = game; // narrowed non-null; closures below capture this, not `game`
 
   async function handleSave(event: FormEvent) {
@@ -101,7 +112,7 @@ export function TemplateEditor() {
 
   return (
     <div className="page">
-      <h1 className="type-title">Score sheet — {game.name}</h1>
+      <PageHeader title={`Score sheet — ${game.name}`} parent={{ to: `/collection/${game.id}`, label: game.name }} />
       <form onSubmit={handleSave}>
         <fieldset>
           <legend>Categories</legend>
@@ -111,7 +122,10 @@ export function TemplateEditor() {
                 value={label}
                 onChange={(e) => updateLabel(index, e.target.value)}
                 placeholder={`Category ${index + 1}`}
+                aria-label={`Category ${index + 1} label`}
               />
+              <button type="button" onClick={() => moveCategory(index, -1)} disabled={index === 0} aria-label={`Move category ${index + 1} up`}>Move up</button>
+              <button type="button" onClick={() => moveCategory(index, 1)} disabled={index === labels.length - 1} aria-label={`Move category ${index + 1} down`}>Move down</button>
               {labels.length > 1 && (
                 <button type="button" onClick={() => removeCategory(index)} aria-label={`Remove category ${index + 1}`}>
                   Remove
@@ -142,7 +156,7 @@ export function TemplateEditor() {
         </label>
 
         {issues.length > 0 && (
-          <ul className="warnings">
+          <ul className="warnings" role="alert">
             {issues.map((issue, i) => (
               <li key={i}>{issue}</li>
             ))}

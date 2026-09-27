@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-server
+.git
+test-results
+playwright-report
+.env
+*.local
+

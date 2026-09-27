@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { addToCollection, getGame, playsForGame, removeFromCollection, type GameRecord } from "../storage/db";
-import { evaluate } from "../engine/evaluate";
-import { winnerSummarySentence } from "../engine/winnerSummary";
-import type { Play } from "../engine/models";
-import { PlayRowItem, type PlayRowData } from "../components/PlayRowItem";
+import { addToCollection, deletePlay, getGame, playSummariesForGame, removeFromCollection, type GameRecord, type PlaySummary } from "../storage/db";
+import { PlayRowItem } from "../components/PlayRowItem";
 import { Dialog } from "../components/Dialog";
+import { GroupedSection, PageHeader } from "../components/PageHeader";
 
 /**
  * `/collection/:gameId` — a game, its plays, and the score-sheet /
@@ -17,18 +15,26 @@ import { Dialog } from "../components/Dialog";
 export function GameDetail() {
   const { gameId } = useParams<{ gameId: string }>();
   const [game, setGame] = useState<GameRecord | null | undefined>(undefined);
-  const [plays, setPlays] = useState<Play[]>([]);
+  const [plays, setPlays] = useState<PlaySummary[]>([]);
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
+  const [deletingPlay, setDeletingPlay] = useState<PlaySummary | null>(null);
 
   async function reload() {
     if (!gameId) return;
-    const [g, p] = await Promise.all([getGame(gameId), playsForGame(gameId)]);
+    const [g, p] = await Promise.all([getGame(gameId), playSummariesForGame(gameId)]);
     setGame(g ?? null);
     setPlays(p);
   }
 
   useEffect(() => {
-    reload();
+    if (!gameId) return;
+    let cancelled = false;
+    void Promise.all([getGame(gameId), playSummariesForGame(gameId)]).then(([loadedGame, loadedPlays]) => {
+      if (cancelled) return;
+      setGame(loadedGame ?? null);
+      setPlays(loadedPlays);
+    });
+    return () => { cancelled = true; };
   }, [gameId]);
 
   if (game === undefined) {
@@ -48,16 +54,6 @@ export function GameDetail() {
 
   const currentGame = game; // narrowed non-null; closures below capture this, not `game`
 
-  const rows: PlayRowData[] = plays.map((play) => ({
-    id: play.id,
-    gameName: play.gameName,
-    playedAt: play.playedAt,
-    status: play.status,
-    playerCount: play.players.length,
-    winnerLine: play.status === "complete" ? winnerSummarySentence(evaluate(play), play.outcome) : null,
-    unreadable: false,
-  }));
-
   async function handleAddToCollection() {
     await addToCollection(currentGame.id);
     reload();
@@ -69,14 +65,22 @@ export function GameDetail() {
     reload();
   }
 
+  async function handleDeletePlay() {
+    if (!deletingPlay) return;
+    await deletePlay(deletingPlay.id);
+    setDeletingPlay(null);
+    await reload();
+  }
+
   return (
     <div className="page">
-      <h1 className="type-title">{game.name}</h1>
+      <PageHeader
+        title={game.name}
+        parent={{ to: "/collection", label: "Collection" }}
+        actions={<Link className="button-link" to="/play/new" state={{ presetGameName: game.name }}>Add Play</Link>}
+      />
 
       <div className="action-row">
-        <Link to="/play/new" state={{ presetGameName: game.name }}>
-          <button type="button">Add Play</button>
-        </Link>
         {game.ownedAt == null && (
           <button type="button" onClick={handleAddToCollection}>
             Add to collection
@@ -84,24 +88,23 @@ export function GameDetail() {
         )}
       </div>
 
-      <section className="score-sheet-section">
-        <h2 className="type-title">Score sheet</h2>
-        <Link to={`/collection/${game.id}/template`}>
-          <button type="button">{game.localTemplate ? "Edit score sheet" : "Add a score sheet"}</button>
+      <GroupedSection title="Score sheet">
+        <Link className="button-link" to={`/collection/${game.id}/template`}>
+          {game.localTemplate ? "Edit score sheet" : "Add a score sheet"}
         </Link>
         {game.localTemplate && (
           <p className="type-caption">{game.localTemplate.categories.map((c) => c.label).join(", ")}</p>
         )}
-      </section>
+      </GroupedSection>
 
-      {rows.length === 0 ? (
+      {plays.length === 0 ? (
         <p className="type-caption">
           {game.ownedAt != null ? "Owned, not yet played." : "Not yet played, and not in your collection."}
         </p>
       ) : (
-        <ul className="play-list">
-          {rows.map((row) => (
-            <PlayRowItem key={row.id} row={row} />
+        <ul className="play-list" aria-label={`${game.name} play history`} data-dialog-fallback tabIndex={-1}>
+          {plays.map((row) => (
+            <PlayRowItem key={row.id} row={row} onDelete={setDeletingPlay} />
           ))}
         </ul>
       )}
@@ -118,6 +121,7 @@ export function GameDetail() {
         <Dialog
           title={`Remove ${game.name} from your collection?`}
           message="Its recorded plays stay exactly as they are — this only removes it from your collection."
+          onCancel={() => setConfirmingRemoval(false)}
         >
           <button type="button" className="destructive-button" onClick={handleConfirmRemove}>
             Remove
@@ -125,6 +129,17 @@ export function GameDetail() {
           <button type="button" onClick={() => setConfirmingRemoval(false)}>
             Cancel
           </button>
+        </Dialog>
+      )}
+
+      {deletingPlay && (
+        <Dialog
+          title={`Delete this ${game.name} play?`}
+          message="Other plays, this game, its score sheet, and saved players will stay in place."
+          onCancel={() => setDeletingPlay(null)}
+        >
+          <button type="button" className="destructive-button" onClick={handleDeletePlay}>Delete play</button>
+          <button type="button" onClick={() => setDeletingPlay(null)}>Cancel</button>
         </Dialog>
       )}
     </div>

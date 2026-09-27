@@ -5,27 +5,48 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc -b && npm run build:server && vite build",
+    "build:server": "tsc -p tsconfig.server.json && tsup server/index.ts server/migrate-entry.ts server/cli.ts --format esm --platform node --target node22 --out-dir dist-server --clean",
+    "build:e2e": "VITE_E2E=true npm run build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:server": "vitest run server",
+    "test:integration": "TEST_DATABASE_URL=postgres://meeplemark_test:integration-only@127.0.0.1:55432/meeplemark_test vitest run --no-file-parallelism server/*.integration.test.ts",
+    "migrate": "tsx server/migrate-entry.ts",
+    "operator": "tsx server/cli.ts",
+    "test:browser": "playwright test",
+    "test:browser:update": "playwright test --update-snapshots"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^10.1.5",
+    "argon2": "^0.44.0",
     "decimal.js": "^10.6.0",
+    "fastify": "^5.12.5",
     "idb": "^8.0.3",
+    "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.13.3",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "fake-indexeddb": "^6.2.5",
     "oxlint": "^1.81.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.11"
   }
 }

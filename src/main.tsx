@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./styles/tokens.css";
 import "./styles/shell.css";
 import App from "./App.tsx";
+import { setupOfflineShell } from "./offline";
+
+setupOfflineShell();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

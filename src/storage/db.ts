@@ -1,9 +1,16 @@
-import { openDB, type IDBPDatabase } from "idb";
+import type { IDBPDatabase } from "idb";
 import type { Category, OutcomeMode, Play, PlayStatus, Template, WinDirection } from "../engine/models";
-import { decodePlay, encodePlay } from "../engine/models";
-import { PlayValidation, type ValidationIssue } from "../engine/validation";
+import type { ValidationIssue } from "../engine/validation";
 import { evaluate } from "../engine/evaluate";
 import { winnerSummarySentence } from "../engine/winnerSummary";
+import {
+  decodePlayDocument,
+  encodePlayDocument,
+  type GameDocument,
+  type GameOrigin,
+  type PlayerDocument,
+} from "../shared/documents";
+import { closeWorkspaceConnectionsForTests, deleteScopedRecord, openWorkspaceDb, putScopedRecord } from "./scopedDb";
 
 // Storage, deliberately simplified relative to the Swift Persistence
 // package. Reads for shape from Game.swift / PlayRecord.swift / Player.swift
@@ -11,33 +18,28 @@ import { winnerSummarySentence } from "../engine/winnerSummary";
 // JSON-string column) — this stores plain nested objects directly, since
 // IndexedDB (via `idb`) has no such constraint.
 
-const DB_NAME = "meeplemark";
-const DB_VERSION = 1;
+async function applyBrowserTestWriteControl(): Promise<void> {
+  if (!import.meta.env.VITE_E2E || typeof window === "undefined") return;
 
-export type GameOrigin = "corpus" | "bgg" | "custom";
+  const delay = Number(window.localStorage.getItem("meeplemark:e2e:write-delay") ?? "0");
+  if (Number.isFinite(delay) && delay > 0) {
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
+  }
+
+  const remaining = Number(window.localStorage.getItem("meeplemark:e2e:write-failures") ?? "0");
+  if (Number.isInteger(remaining) && remaining > 0) {
+    window.localStorage.setItem("meeplemark:e2e:write-failures", String(remaining - 1));
+    throw new Error("The test harness rejected this storage write.");
+  }
+}
+
+export type { GameOrigin } from "../shared/documents";
 
 /** A shared fact ("Wingspan is Wingspan for everyone"), not scoped to a user. */
-export interface GameRecord {
-  id: string;
-  name: string;
-  slug: string | null;
-  bggThingId: string | null;
-  origin: GameOrigin;
-  /** Presence means "in the collection" — mirrors Game.swift's `isOwned`. */
-  ownedAt: string | null;
-  /** A locally authored category set, or null if never authored. */
-  localTemplate: Template | null;
-  /** 0 means "never authored". */
-  templateVersion: number;
-}
+export interface GameRecord extends GameDocument {}
 
 /** A local address-book entry, not an identity. */
-export interface PlayerRecord {
-  id: string;
-  displayName: string;
-  bggUsername: string | null;
-  preferredColorIndex: number | null;
-}
+export interface PlayerRecord extends PlayerDocument {}
 
 /** The stored shape for a play: indexed columns plus the full document. */
 interface PlayRow {
@@ -50,28 +52,16 @@ interface PlayRow {
   play: unknown;
 }
 
-let dbPromise: Promise<IDBPDatabase> | null = null;
+const playWriteChains = new Map<string, Promise<void>>();
+const deletedPlayIds = new Set<string>();
 
 export function getDb(): Promise<IDBPDatabase> {
-  if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains("games")) db.createObjectStore("games", { keyPath: "id" });
-        if (!db.objectStoreNames.contains("players")) db.createObjectStore("players", { keyPath: "id" });
-        if (!db.objectStoreNames.contains("plays")) db.createObjectStore("plays", { keyPath: "id" });
-      },
-    });
-  }
-  return dbPromise;
+  return openWorkspaceDb();
 }
 
 /** Test-only: closes and forgets the current connection, so a fresh test can delete the database. */
 export async function resetDbConnectionForTests(): Promise<void> {
-  if (dbPromise) {
-    const db = await dbPromise;
-    db.close();
-    dbPromise = null;
-  }
+  await closeWorkspaceConnectionsForTests();
 }
 
 // --- Plays ---
@@ -85,18 +75,6 @@ export async function resetDbConnectionForTests(): Promise<void> {
  * otherwise round-trip as "corrupted" on every read. This patches the
  * encoded JSON to add the key back as an explicit null before storage.
  */
-function schemaCompliantJSON(play: Play): Record<string, unknown> {
-  const encoded = encodePlay(play);
-  const players = encoded.players as Record<string, unknown>[];
-  const requiredKey = play.outcome === "ranked" ? "rank" : play.outcome === "flagged" ? "win" : null;
-  if (requiredKey) {
-    for (const player of players) {
-      if (!(requiredKey in player)) player[requiredKey] = null;
-    }
-  }
-  return encoded;
-}
-
 export class PlayReadError extends Error {
   issues: ValidationIssue[];
   constructor(issues: ValidationIssue[]) {
@@ -110,17 +88,18 @@ export async function readPlay(id: string): Promise<Play> {
   const db = await getDb();
   const row = (await db.get("plays", id)) as PlayRow | undefined;
   if (!row) throw new Error(`no play with id '${id}'`);
-  const issues = PlayValidation.validate(row.play);
-  if (issues.length > 0) throw new PlayReadError(issues);
-  return decodePlay(row.play);
+  try {
+    return decodePlayDocument(row.play);
+  } catch (error) {
+    if (error instanceof Error && "issues" in error) throw new PlayReadError((error as { issues: ValidationIssue[] }).issues);
+    throw error;
+  }
 }
 
 /** Validates before writing, so a corrupt document is never persisted. */
-export async function writePlay(play: Play): Promise<void> {
-  const db = await getDb();
-  const encoded = schemaCompliantJSON(play);
-  const issues = PlayValidation.validate(encoded);
-  if (issues.length > 0) throw new PlayReadError(issues);
+async function putPlay(play: Play): Promise<void> {
+  await applyBrowserTestWriteControl();
+  const encoded = encodePlayDocument(play);
 
   const row: PlayRow = {
     id: play.id,
@@ -130,7 +109,30 @@ export async function writePlay(play: Play): Promise<void> {
     gameRef: play.gameRef,
     play: encoded,
   };
-  await db.put("plays", row);
+  await putScopedRecord("plays", row as unknown as Record<string, unknown>);
+}
+
+/** Serializes writes per play and refuses writes once deletion has started. */
+export function writePlay(play: Play): Promise<void> {
+  if (deletedPlayIds.has(play.id)) return Promise.reject(new Error("This play has been deleted."));
+  const previous = playWriteChains.get(play.id) ?? Promise.resolve();
+  const operation = previous.catch(() => undefined).then(async () => {
+    if (deletedPlayIds.has(play.id)) throw new Error("This play has been deleted.");
+    await putPlay(play);
+  });
+  playWriteChains.set(play.id, operation);
+  void operation.finally(() => {
+    if (playWriteChains.get(play.id) === operation) playWriteChains.delete(play.id);
+  }).catch(() => undefined);
+  return operation;
+}
+
+/** Deletes only the selected play. Related games, sheets and players are independent records. */
+export async function deletePlay(id: string): Promise<void> {
+  deletedPlayIds.add(id);
+  await playWriteChains.get(id)?.catch(() => undefined);
+  await applyBrowserTestWriteControl();
+  await deleteScopedRecord("plays", id);
 }
 
 /** All plays, sorted by playedAt descending (most recent first). */
@@ -189,7 +191,7 @@ export async function listPlaySummaries(): Promise<PlaySummary[]> {
   const rows = await listPlays();
   return rows.map((row) => {
     try {
-      return summaryFromPlay(decodePlay(row.play));
+      return summaryFromPlay(decodePlayDocument(row.play));
     } catch {
       return unreadableSummary(row);
     }
@@ -207,12 +209,24 @@ export async function playsForGame(gameRef: string): Promise<Play[]> {
   const plays: Play[] = [];
   for (const row of rows) {
     try {
-      plays.push(decodePlay(row.play));
+      plays.push(decodePlayDocument(row.play));
     } catch {
       // skip — see the doc comment above.
     }
   }
   return plays;
+}
+
+/** A game's history including unreadable rows, most recent first. */
+export async function playSummariesForGame(gameRef: string): Promise<PlaySummary[]> {
+  const rows = (await listPlays()).filter((row) => row.gameRef === gameRef);
+  return rows.map((row) => {
+    try {
+      return summaryFromPlay(decodePlayDocument(row.play));
+    } catch {
+      return unreadableSummary(row);
+    }
+  });
 }
 
 /**
@@ -244,7 +258,7 @@ export async function recentPlayerNames(limit = 20): Promise<string[]> {
   for (const row of rows) {
     let play: Play;
     try {
-      play = decodePlay(row.play);
+      play = decodePlayDocument(row.play);
     } catch {
       continue;
     }
@@ -258,28 +272,89 @@ export async function recentPlayerNames(limit = 20): Promise<string[]> {
   return names;
 }
 
+/** Distinct names from up to `limit` recent plays that have no game reference. */
+export async function recentUnlinkedGameNames(limit = 200): Promise<string[]> {
+  const rows = (await listPlays()).filter((row) => row.gameRef == null).slice(0, limit);
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const row of rows) {
+    try {
+      const play = decodePlayDocument(row.play);
+      const name = play.gameName.trim();
+      const key = name.toLocaleLowerCase();
+      if (name && !seen.has(key)) {
+        seen.add(key);
+        names.push(name);
+      }
+    } catch {
+      // Suggestions are best-effort; corrupt documents remain visible in history.
+    }
+  }
+  return names;
+}
+
+export interface PlayerSuggestion {
+  id: string | null;
+  name: string;
+  username: string | null;
+}
+
+/** Saved directory entries first, then distinct names from the latest 20 plays. */
+export async function playerSuggestions(): Promise<PlayerSuggestion[]> {
+  const saved = [...(await listPlayers())].sort(
+    (a, b) =>
+      a.displayName.localeCompare(b.displayName) ||
+      (a.bggUsername ?? "").localeCompare(b.bggUsername ?? "") ||
+      a.id.localeCompare(b.id),
+  );
+  const result: PlayerSuggestion[] = saved.map((player) => ({
+    id: player.id,
+    name: player.displayName,
+    username: player.bggUsername,
+  }));
+  const savedNames = new Set(saved.map((player) => player.displayName));
+  for (const name of await recentPlayerNames(20)) {
+    if (!savedNames.has(name)) {
+      savedNames.add(name);
+      result.push({ id: null, name, username: null });
+    }
+  }
+  return result;
+}
+
 export interface NewPlayInput {
   gameName: string;
   gameRef?: string | null;
   winDirection: WinDirection;
   outcome: OutcomeMode;
-  playerNames: string[];
+  playerNames?: string[];
+  seats?: Array<{ name: string; playerRef?: string | null }>;
+  template?: Template | null;
 }
 
-/** Creates and persists a new draft play — plain mode only (no template). */
+/** Constructs the final plain or templated document and persists it exactly once. */
 export async function createDraftPlay(input: NewPlayInput): Promise<Play> {
+  const seats = input.seats ?? input.playerNames?.map((name) => ({ name, playerRef: null })) ?? [];
+  const template = input.template ?? null;
   const play: Play = {
     id: crypto.randomUUID(),
     playedAt: new Date().toISOString(),
     status: "draft",
     gameName: input.gameName,
     gameRef: input.gameRef ?? null,
-    winDirection: input.winDirection,
-    outcome: input.outcome,
-    scoring: null,
-    players: input.playerNames.map((name) => ({
-      name,
-      playerRef: null,
+    winDirection: template?.winDirection ?? input.winDirection,
+    outcome: template?.defaultOutcome ?? input.outcome,
+    scoring: template
+      ? {
+          slug: template.slug,
+          version: template.version,
+          defaultOutcome: template.defaultOutcome,
+          categories: template.categories.map((category) => ({ ...category })),
+        }
+      : null,
+    players: seats.map((seat) => ({
+      name: seat.name,
+      playerRef: seat.playerRef ?? null,
       categories: null,
       total: null,
       totalIsOverridden: false,
@@ -338,25 +413,26 @@ export async function createGame(input: NewGameInput): Promise<GameRecord> {
     localTemplate: null,
     templateVersion: 0,
   };
-  const db = await getDb();
-  await db.put("games", game);
+  await putScopedRecord("games", game as unknown as Record<string, unknown>);
   return game;
 }
 
 /** Adds a game to the collection. Never called by play recording. */
 export async function addToCollection(gameId: string): Promise<void> {
+  await applyBrowserTestWriteControl();
   const db = await getDb();
   const game = (await db.get("games", gameId)) as GameRecord | undefined;
   if (!game) throw new Error(`no game with id '${gameId}'`);
-  await db.put("games", { ...game, ownedAt: new Date().toISOString() });
+  await putScopedRecord("games", { ...game, ownedAt: new Date().toISOString() });
 }
 
 /** Removes a game from the collection. The Game record and its plays are untouched. */
 export async function removeFromCollection(gameId: string): Promise<void> {
+  await applyBrowserTestWriteControl();
   const db = await getDb();
   const game = (await db.get("games", gameId)) as GameRecord | undefined;
   if (!game) throw new Error(`no game with id '${gameId}'`);
-  await db.put("games", { ...game, ownedAt: null });
+  await putScopedRecord("games", { ...game, ownedAt: null });
 }
 
 /** D3: never a bare corpus-shaped slug, so a future corpus template can be offered alongside it. */
@@ -419,6 +495,7 @@ export async function setTemplate(
   winDirection: WinDirection,
   defaultOutcome: OutcomeMode,
 ): Promise<void> {
+  await applyBrowserTestWriteControl();
   const trimmedLabels = categoryLabels.map((label) => label.trim());
   if (trimmedLabels.length === 0) throw new Error("at least one category is required");
   if (trimmedLabels.length > 10) throw new Error("at most 10 categories are allowed");
@@ -447,7 +524,7 @@ export async function setTemplate(
     defaultOutcome,
     categories,
   };
-  await db.put("games", { ...game, localTemplate: template, templateVersion: newVersion });
+  await putScopedRecord("games", { ...game, localTemplate: template, templateVersion: newVersion });
 }
 
 /**
@@ -455,10 +532,11 @@ export async function setTemplate(
  * play — plays hold their own embedded `scoring` snapshot.
  */
 export async function deleteTemplate(gameId: string): Promise<void> {
+  await applyBrowserTestWriteControl();
   const db = await getDb();
   const game = (await db.get("games", gameId)) as GameRecord | undefined;
   if (!game) throw new Error(`no game with id '${gameId}'`);
-  await db.put("games", { ...game, localTemplate: null, templateVersion: 0 });
+  await putScopedRecord("games", { ...game, localTemplate: null, templateVersion: 0 });
 }
 
 /**
@@ -517,6 +595,30 @@ export async function quickPickGames(): Promise<GameRecord[]> {
   return ordered;
 }
 
+export interface GameSuggestion {
+  name: string;
+  gameRef: string | null;
+}
+
+/** Referenced recents, remaining owned games, then unlinked historical names. */
+export async function gameSuggestions(): Promise<GameSuggestion[]> {
+  const suggestions: GameSuggestion[] = [];
+  const seenNames = new Set<string>();
+  for (const game of await quickPickGames()) {
+    const key = game.name.toLocaleLowerCase();
+    if (seenNames.has(key)) continue;
+    seenNames.add(key);
+    suggestions.push({ name: game.name, gameRef: game.id });
+  }
+  for (const name of await recentUnlinkedGameNames(200)) {
+    const key = name.toLocaleLowerCase();
+    if (seenNames.has(key)) continue;
+    seenNames.add(key);
+    suggestions.push({ name, gameRef: null });
+  }
+  return suggestions;
+}
+
 /** Keys on `slug`/`bggThingId` only — `id` never enters this comparison. */
 export function representSameGame(a: GameRecord, b: GameRecord): boolean {
   if (a.slug != null && b.slug != null && a.slug === b.slug) return true;
@@ -543,6 +645,7 @@ export interface NewPlayerInput {
 }
 
 export async function createPlayer(input: NewPlayerInput): Promise<PlayerRecord> {
+  await applyBrowserTestWriteControl();
   const displayName = input.displayName.trim();
   if (!displayName) throw new Error("displayName must not be empty");
 
@@ -552,8 +655,7 @@ export async function createPlayer(input: NewPlayerInput): Promise<PlayerRecord>
     bggUsername: input.bggUsername?.trim() || null,
     preferredColorIndex: input.preferredColorIndex ?? null,
   };
-  const db = await getDb();
-  await db.put("players", player);
+  await putScopedRecord("players", player as unknown as Record<string, unknown>);
   return player;
 }
 
@@ -564,10 +666,47 @@ export function representSamePlayer(a: PlayerRecord, b: PlayerRecord): boolean {
 }
 
 export async function renamePlayer(id: string, displayName: string): Promise<void> {
+  await applyBrowserTestWriteControl();
   const trimmed = displayName.trim();
   if (!trimmed) throw new Error("displayName must not be empty");
   const db = await getDb();
   const player = (await db.get("players", id)) as PlayerRecord | undefined;
   if (!player) throw new Error(`no player with id '${id}'`);
-  await db.put("players", { ...player, displayName: trimmed });
+  await putScopedRecord("players", { ...player, displayName: trimmed });
+}
+
+export interface PlayerUpdate {
+  displayName: string;
+  bggUsername?: string | null;
+  preferredColorIndex?: number | null;
+}
+
+export async function updatePlayer(id: string, update: PlayerUpdate): Promise<PlayerRecord> {
+  await applyBrowserTestWriteControl();
+  const displayName = update.displayName.trim();
+  if (!displayName) throw new Error("A display name is required.");
+  const preferredColorIndex = update.preferredColorIndex ?? null;
+  if (
+    preferredColorIndex !== null &&
+    (!Number.isInteger(preferredColorIndex) || preferredColorIndex < 0 || preferredColorIndex > 7)
+  ) {
+    throw new Error("Player colour must be automatic or one of the eight available colours.");
+  }
+  const db = await getDb();
+  const player = (await db.get("players", id)) as PlayerRecord | undefined;
+  if (!player) throw new Error(`no player with id '${id}'`);
+  const updated: PlayerRecord = {
+    ...player,
+    displayName,
+    bggUsername: update.bggUsername?.trim() || null,
+    preferredColorIndex,
+  };
+  await putScopedRecord("players", updated as unknown as Record<string, unknown>);
+  return updated;
+}
+
+/** Removes only the directory entry; historical play documents are self-contained. */
+export async function deletePlayer(id: string): Promise<void> {
+  await applyBrowserTestWriteControl();
+  await deleteScopedRecord("players", id);
 }

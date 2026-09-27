@@ -1,147 +1,69 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import type { PlayDraftApi } from "../draft/usePlayDraft";
 import { assignRoster } from "../tokens/playerIdentity";
-import { winnerSummarySentence } from "../engine/winnerSummary";
-import { addToCollection, getGame, type GameRecord } from "../storage/db";
 import { MarkerBadge } from "../components/MarkerBadge";
-import { Dialog } from "../components/Dialog";
+import { CompletionControls, DecimalScoreField, OutcomeControl } from "../components/ScoreControls";
+import { PageHeader } from "../components/PageHeader";
 
-/**
- * The plain-mode scoring surface (`play.scoring === null`). One score per
- * player, rank live-recomputed via `evaluate()` on every keystroke.
- * Mirrors ScoringView.swift.
- */
 export function PlayScoring({ draft }: { draft: PlayDraftApi }) {
   const play = draft.play!;
   const evaluation = draft.evaluation!;
-  const navigate = useNavigate();
+  const [scoreTexts, setScoreTexts] = useState(() => play.players.map((player) => player.total?.toFixed() ?? ""));
+  const [rankTexts, setRankTexts] = useState(() => play.players.map((player) => player.rankIsOverridden && player.rank != null ? String(player.rank) : ""));
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(() => new Set());
+  const roster = assignRoster(play.players.map((player) => player.name));
+  const setHasUnfinishedInput = draft.setHasUnfinishedInput;
 
-  const [scoreTexts, setScoreTexts] = useState<string[]>(
-    play.players.map((p) => (p.total != null ? p.total.toFixed() : "")),
-  );
-  const [rankTexts, setRankTexts] = useState<string[]>(
-    play.players.map((p) => (p.rankIsOverridden && p.rank != null ? String(p.rank) : "")),
-  );
+  useEffect(() => {
+    setHasUnfinishedInput(invalidFields.size > 0);
+    return () => setHasUnfinishedInput(false);
+  }, [setHasUnfinishedInput, invalidFields.size]);
 
-  const [uncollectedGame, setUncollectedGame] = useState<GameRecord | null>(null);
-  const [confirmingAdd, setConfirmingAdd] = useState(false);
-  const [showingRecorded, setShowingRecorded] = useState(false);
-
-  const roster = assignRoster(play.players.map((p) => p.name));
+  function setValidity(key: string, valid: boolean) {
+    setInvalidFields((current) => {
+      const next = new Set(current);
+      if (valid) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   function updateScore(index: number, value: string) {
-    setScoreTexts((texts) => texts.map((t, i) => (i === index ? value : t)));
-    draft.setScore(index, value);
+    setScoreTexts((texts) => texts.map((text, position) => position === index ? value : text));
+    setValidity(`score:${index}`, draft.setScore(index, value));
   }
 
   function updateRank(index: number, value: string) {
-    setRankTexts((texts) => texts.map((t, i) => (i === index ? value : t)));
-    draft.setRank(index, value);
-  }
-
-  // Two-step completion (mirrors ScoringView.swift): offer to add an
-  // uncollected game once, then always confirm with the winner sentence.
-  async function handleComplete() {
-    draft.complete();
-    if (play.gameRef) {
-      const game = await getGame(play.gameRef);
-      if (game && game.ownedAt == null) {
-        setUncollectedGame(game);
-        setConfirmingAdd(true);
-        return;
-      }
-    }
-    setShowingRecorded(true);
-  }
-
-  async function resolveCollectionOffer(add: boolean) {
-    if (add && uncollectedGame) await addToCollection(uncollectedGame.id);
-    setConfirmingAdd(false);
-    setShowingRecorded(true);
+    setRankTexts((texts) => texts.map((text, position) => position === index ? value : text));
+    setValidity(`rank:${index}`, draft.setRank(index, value));
   }
 
   return (
     <div className="page">
-      <h1 className="type-title">{play.gameName}</h1>
-      <p className="type-caption">
-        {new Date(play.playedAt).toLocaleString()} · {play.status}
-      </p>
+      <PageHeader title={play.gameName} parent={{ to: "/", label: "Plays" }} subtitle={`${new Date(play.playedAt).toLocaleString()} · ${play.status}`} />
 
-      <table className="score-table">
-        <thead>
-          <tr>
-            <th aria-hidden="true"></th>
-            <th>Player</th>
-            <th>Rank</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {play.players.map((player, index) => {
-            const identity = roster[index];
-            const result = evaluation.players[index];
-            return (
-              <tr key={index}>
-                <td>{identity && <MarkerBadge identity={identity} />}</td>
-                <td>{player.name}</td>
-                <td>
-                  <input
-                    className="tabular-nums rank-input"
-                    inputMode="numeric"
-                    value={rankTexts[index] ?? ""}
-                    placeholder={result?.rank != null ? `Rank ${result.rank}` : "Rank —"}
-                    onChange={(e) => updateRank(index, e.target.value)}
-                    aria-label={`${player.name}'s rank`}
-                  />
-                </td>
-                <td>
-                  <input
-                    className="tabular-nums"
-                    inputMode="decimal"
-                    value={scoreTexts[index] ?? ""}
-                    onChange={(e) => updateScore(index, e.target.value)}
-                    aria-label={`${player.name}'s score`}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="plain-score-list" role="group" aria-label="Player scores">
+        {play.players.map((player, index) => {
+          const identity = roster[index];
+          const result = evaluation.players[index];
+          return (
+            <section className="plain-player-card" key={index} aria-labelledby={`plain-player-${index}`}>
+              <div className="plain-player-identity">{identity && <MarkerBadge identity={identity} />}<h2 id={`plain-player-${index}`}>{player.name}</h2></div>
+              <label className="field score-field"><span className="field-label">Score</span><DecimalScoreField label={`${player.name}'s score`} value={scoreTexts[index] ?? ""} onChange={(value) => updateScore(index, value)} /></label>
+              {play.outcome === "ranked" ? (
+                <label className="field rank-field">
+                  <span className="field-label">Rank {player.rankIsOverridden && <span className="manual-indicator">Manual rank</span>}</span>
+                  <input className="tabular-nums" inputMode="numeric" value={rankTexts[index] ?? ""} placeholder={result?.rank != null ? `Automatic: ${result.rank}` : "Automatic"} onChange={(event) => updateRank(index, event.target.value)} aria-label={`${player.name}'s rank`} />
+                </label>
+              ) : (
+                <OutcomeControl name={player.name} value={player.win} onChange={(value) => draft.setWin(index, value)} />
+              )}
+            </section>
+          );
+        })}
+      </div>
 
-      {evaluation.warnings.length > 0 && (
-        <ul className="warnings">
-          {evaluation.warnings.map((warning, i) => (
-            <li key={i}>{warning.message}</li>
-          ))}
-        </ul>
-      )}
-
-      {draft.loadError && <p role="alert">{draft.loadError}</p>}
-
-      <button type="button" onClick={handleComplete} disabled={play.status === "complete"}>
-        Complete
-      </button>
-
-      {confirmingAdd && uncollectedGame && (
-        <Dialog title={`Add ${uncollectedGame.name} to your collection?`}>
-          <button type="button" onClick={() => resolveCollectionOffer(true)}>
-            Add
-          </button>
-          <button type="button" onClick={() => resolveCollectionOffer(false)}>
-            Not now
-          </button>
-        </Dialog>
-      )}
-
-      {showingRecorded && (
-        <Dialog title="Play recorded" message={winnerSummarySentence(evaluation, play.outcome) ?? "Nice game."}>
-          <button type="button" onClick={() => navigate("/")}>
-            View Plays
-          </button>
-        </Dialog>
-      )}
+      {evaluation.warnings.length > 0 && <ul className="warnings" role="status">{evaluation.warnings.map((warning) => <li key={warning.code}>{warning.message}</li>)}</ul>}
+      <CompletionControls draft={draft} hasUnfinishedInput={invalidFields.size > 0} />
     </div>
   );
 }

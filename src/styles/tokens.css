@@ -23,6 +23,8 @@
      one custom property rather than reusing --color-warning (amber) or a
      literal in component CSS. */
   --color-destructive: #b3261e;
+  --color-accent: #3559a8;
+  --color-focus: #245fd1;
 
   /* --- Player palette (Color/PlayerPalette.swift + ShellAccents.swift's
      shared hue swatches) --- Eight fill/foreground pairs, in cycle order
@@ -103,6 +105,11 @@
      font-size, so this is paired with --type-table-label-size on
      .scorepad-pinned rather than a literal px width. */
   --scorepad-label-column-width: 16ch;
+  --touch-target: 44px;
+  --content-width: 40rem;
+  --content-wide-width: 72rem;
+  --focus-ring-width: 3px;
+  --motion-fast: 160ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -115,6 +122,8 @@
     --color-score-emphasis: #e0c070;
     --color-warning: #f2b84b;
     --color-destructive: #f2b8b5;
+    --color-accent: #9bb7ff;
+    --color-focus: #9bb7ff;
   }
 }
 
@@ -125,7 +134,10 @@ body {
   font-size: var(--type-body-size);
   font-weight: var(--type-body-weight);
   line-height: var(--type-body-line-height);
+  margin: 0;
 }
+
+*, *::before, *::after { box-sizing: border-box; }
 
 /* The one style tabular figures are mandatory for — a total's on-screen
    width must depend only on digit count, never on which digits appear. */
