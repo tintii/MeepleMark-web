@@ -1,5 +1,10 @@
 # iOS parity verification
 
+This document records the guest/local parity baseline. Account, synchronization,
+PostgreSQL, and container acceptance are recorded separately in
+[`accounts-sync-verification.md`](accounts-sync-verification.md); do not infer
+server coverage from the parity results below.
+
 ## Baselines
 
 - Web revision before this change: `0ce1fe91c8406cf5168b420ef27e47ddba5e6c9f`

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { PlayDraftApi } from "../draft/usePlayDraft";
 import { assignRoster } from "../tokens/playerIdentity";
 import { MarkerBadge } from "../components/MarkerBadge";
@@ -100,7 +100,7 @@ export function PlayScorepadGrid({ draft }: { draft: PlayDraftApi }) {
       </div>
 
       {layout === "single" ? (
-        <section className="single-scorepad" aria-labelledby="single-player-heading">
+        <section className="single-scorepad" aria-labelledby="single-player-heading" style={{ "--player-accent": `var(--color-player-${(roster[selectedPlayer]?.colorIndex ?? selectedPlayer) % 8 + 1}-fill)` } as CSSProperties}>
           <div className="single-player-nav">
             <button type="button" onClick={() => setSelectedPlayer((index) => Math.max(0, index - 1))} disabled={selectedPlayer === 0}>Previous</button>
             <div className="plain-player-identity">{roster[selectedPlayer] && <MarkerBadge identity={roster[selectedPlayer]} />}<h2 id="single-player-heading" ref={(element) => { layoutHeading.current = element; }} tabIndex={-1}>{play.players[selectedPlayer].name}</h2></div>
@@ -116,7 +116,7 @@ export function PlayScorepadGrid({ draft }: { draft: PlayDraftApi }) {
       ) : (
         <div className="scorepad-table-wrap" tabIndex={0} aria-label="Category score grid">
           <table className="scorepad-table">
-            <thead><tr><th scope="col" ref={(element) => { layoutHeading.current = element; }} tabIndex={-1}>Category</th>{play.players.map((player, index) => <th scope="col" key={index}><span className="scorepad-player-heading">{roster[index] && <MarkerBadge identity={roster[index]} />}{player.name}</span></th>)}</tr></thead>
+            <thead><tr><th scope="col" ref={(element) => { layoutHeading.current = element; }} tabIndex={-1}>Category</th>{play.players.map((player, index) => <th scope="col" key={index} style={{ "--player-accent": `var(--color-player-${(roster[index]?.colorIndex ?? index) % 8 + 1}-fill)` } as CSSProperties}><span className="scorepad-player-heading">{roster[index] && <MarkerBadge identity={roster[index]} />}{player.name}</span></th>)}</tr></thead>
             <tbody>
               {categories.map((category) => <tr key={category.key}><th scope="row">{category.label}</th>{play.players.map((player, index) => <td key={index}><DecimalScoreField label={`${player.name}, ${category.label}`} value={categoryTexts[index]?.[category.key] ?? ""} onChange={(value) => updateCategory(index, category.key, value)} /></td>)}</tr>)}
               <tr><th scope="row">Total</th>{play.players.map((_, index) => <td key={index}>{totalControl(index)}</td>)}</tr>

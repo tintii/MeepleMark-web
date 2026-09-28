@@ -1,5 +1,20 @@
 # Self-hosting MeepleMark
 
+## Supported deployment and limits
+
+The supported account-backed topology is one application container and one
+PostgreSQL 17 container on a single Compose host, behind an operator-managed
+same-origin HTTPS proxy. The application container runs as a non-root user; the
+database has no public port; migrations run as a separate one-shot service.
+
+This release does not provide public registration, email recovery, OIDC,
+multi-host orchestration, bundled TLS/DNS, monitoring, or an off-host backup
+target. Accounts are installation-local and created by the operator. Guest mode
+continues to work without the server. Browser caches are not encrypted from a
+person controlling that browser profile, offline clients learn about remote
+revocation only after reconnecting, and only server-acknowledged data is covered
+by server backups.
+
 ## Install and provision
 
 Requirements: Docker Engine with Compose v2 (or a compatible Compose
@@ -21,6 +36,10 @@ expires after 24 hours and is never stored in plaintext. Use
 `account recovery alice` to invalidate older codes and issue a replacement.
 The database has no published host port. The application binds to loopback by
 default; adapt `docs/Caddyfile.example` for the public hostname and TLS.
+
+Keep the application and API on the exact `APP_ORIGIN`; cross-origin writes are
+rejected. A first sign-in/setup and unlocking after explicit logout require the
+server, while an already activated account workspace remains usable offline.
 
 ## Upgrade and rollback
 
@@ -84,3 +103,10 @@ requires PostgreSQL and the compatible migration version. `/api/*` is always
 development runs `npm run dev:server` beside `npm run dev`, whose proxy keeps API
 traffic same-origin at `http://localhost:5173`.
 
+## Release verification record
+
+The verification evidence and environment-specific gaps are maintained in
+[`accounts-sync-verification.md`](accounts-sync-verification.md). Repeat the
+real-PostgreSQL, account-browser, image, replacement, and restore checks on the
+actual release host; a successful local TypeScript/Vite build alone is not an
+image or recovery pass.

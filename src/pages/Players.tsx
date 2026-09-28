@@ -3,7 +3,7 @@ import { createPlayer, deletePlayer, listPlayers, updatePlayer, type PlayerRecor
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
 
-const COLOR_NAMES = ["Coral", "Amber", "Green", "Teal", "Blue", "Purple", "Pink", "Navy"];
+const COLOR_NAMES = ["Coral", "Apricot", "Butter", "Mint", "Aqua", "Periwinkle", "Lavender", "Pink"];
 
 interface PlayerForm {
   displayName: string;

@@ -1,14 +1,16 @@
 # meeplemark-web
 
 A browser implementation of **Meeple N Mark / MeepleMark**, a board-game
-scorepad. The current build runs entirely in the browser and stores data
-locally in IndexedDB; accounts and a backend are not implemented yet.
+scorepad. Guest work remains local in IndexedDB. A self-hosted Fastify/PostgreSQL
+service adds operator-provisioned accounts, per-account browser workspaces,
+offline-first synchronization, explicit conflict recovery, and deliberate copying
+of guest data into an account.
 
-**Direction as of 2026-09-26:** prioritize the web app for phones and desktops,
-with a leaning toward web-only delivery. Plan self-hosted PostgreSQL persistence,
-separate user accounts and player records, and eventual Docker/Compose deployment.
-See [the persistence roadmap](docs/self-hosted-persistence.md) for the architecture,
-iOS impact, and decisions still open. This is future work, not current capability.
+The supported production deployment is a single-host Docker Compose stack behind
+an operator-managed HTTPS reverse proxy. See the
+[persistence architecture](docs/self-hosted-persistence.md),
+[self-hosting guide](docs/self-hosting.md), and
+[account/sync verification record](docs/accounts-sync-verification.md).
 
 This is a fresh, standalone repository, not a subdirectory of the Swift
 project. The scoring engine, ranking rules, design tokens, and storage
@@ -27,6 +29,8 @@ time.
 - `react-router-dom` for the route shell
 - Workbox via `vite-plugin-pwa` for generated production precaching
 - Playwright for Chromium/WebKit journeys and responsive screenshots
+- Fastify + PostgreSQL for account-owned persistence and synchronization
+- Docker/Compose for the production application, migrations, and database
 
 No CDN scripts or fonts — everything is bundled through npm/Vite.
 
@@ -35,11 +39,17 @@ No CDN scripts or fonts — everything is bundled through npm/Vite.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
+npm run dev:server # API on http://localhost:8787 (requires PostgreSQL)
 npm test           # vitest run — engine, ranking, tokens, storage
 npm run build      # static bundle in dist/
 npm run preview    # serve the build
 npm run test:browser # production-preview journeys (Chromium + WebKit)
 ```
+
+For account-backed local development, start PostgreSQL, run `npm run migrate`,
+then run the API and Vite commands in separate terminals. Guest mode needs no
+server. For a production installation and account provisioning, follow
+[`docs/self-hosting.md`](docs/self-hosting.md).
 
 ## Status
 
@@ -140,27 +150,34 @@ same draft state, ordered writes, retryable errors, durable completion, and
 unfinished-number protection. See `docs/verification.md` for the source matrix
 and `e2e/*-snapshots/` for rendered evidence.
 
-Accounts, server persistence, and cross-browser synchronization were outside
-the completed parity change and are now a separate planned workstream in the
-[persistence roadmap](docs/self-hosted-persistence.md). BGG requests/authentication,
-general import/export, and native packaging remain outside that workstream.
-BGG usernames are local metadata in the current build.
+Account-backed persistence is now implemented as a separate layer over the
+completed parity UI. Accounts are created by an operator; there is no public
+registration or email recovery. Signed-in work is saved to an account-specific
+IndexedDB replica first and synchronized to PostgreSQL when the server is
+reachable. Concurrent record edits require an explicit Use server / Keep mine
+choice. Guest data is never uploaded automatically and remains available after
+copying. BGG requests/authentication, general import/export, shared catalogues,
+native synchronization/packaging, federation, groups, and live collaborative
+editing remain out of scope. BGG usernames are metadata only.
 
-## Offline use and static hosting
+## Offline use and hosting
 
 Production builds generate a versioned application-shell precache. Registration
 is limited to production on HTTPS (localhost is allowed for testing), and
 “Ready for offline use” appears only after precaching succeeds. After that,
-known app routes can reopen offline and all core data operations continue to use
-IndexedDB. A first visit still requires connectivity. Clearing browser/site
-data, private-mode eviction, or browser storage pressure can remove local data;
-offline support is not backup or sync.
+known app routes, including account and conflict routes, can reopen offline and
+all core data operations continue to use IndexedDB. Previously activated account
+workspaces can be used offline; first sign-in, setup, and unlocking after an
+explicit logout require the server. Clearing browser/site data, private-mode
+eviction, or browser storage pressure can remove unsynchronized local data.
+Offline support is not a backup, and only server-acknowledged account records are
+protected by PostgreSQL backups.
 
-The static host must:
+For a guest-only static deployment, the host must:
 
 1. serve the build over HTTPS;
 2. return `index.html` for these navigation routes only: `/`, `/play/*`,
-   `/collection`, `/collection/*`, and `/players`;
+   `/collection`, `/collection/*`, `/players`, `/account`, and `/conflicts`;
 3. serve real assets with their normal status and MIME type—missing JS/CSS/image
    requests must remain 404s and must not receive `index.html`;
 4. avoid caching `index.html`, `sw.js`, or `manifest.webmanifest` indefinitely;
@@ -170,6 +187,12 @@ Vite preview validates the production artifact and local fallback behaviour,
 but it is not deployment verification. A fresh-browser deep-link check must be
 run against the selected host so an existing service worker cannot mask a bad
 rewrite rule.
+
+The supported account deployment is not static hosting: use the application
+service so the frontend and `/api/v1/*` share an origin. PostgreSQL must never be
+exposed to browsers. Browser workspace isolation is not encryption against a
+person who controls the same device/profile, and an offline browser cannot learn
+that an operator revoked or deleted its account until it reconnects.
 
 ## Repository layout
 
@@ -182,4 +205,7 @@ rewrite rule.
 | `src/draft/` | Play-draft mutation semantics (pure) and the `usePlayDraft` hook |
 | `src/components/` | Shared UI: play row, marker badge, dialog |
 | `src/pages/` | Routes: plays, collection, game detail, template editor, players, new play, scoring (plain + scorepad grid) |
+| `src/account/`, `src/sync/`, `src/adoption/` | Account workspaces, synchronization, conflicts, and guest-data adoption |
+| `server/` | Fastify API, PostgreSQL migrations, sync/adoption protocol, and operator CLI |
+| `docs/` | Self-hosting, recovery, persistence, and verification guidance |
 | `golden/` | Golden corpus, copied from the MeepleMark Swift repo (see `SOURCE.md`) |

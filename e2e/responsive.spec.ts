@@ -10,6 +10,8 @@ const routes = [
   "/play/new",
   "/play/fixture-plain",
   "/play/fixture-category",
+  "/account",
+  "/conflicts",
 ];
 
 test("every route stays within the page viewport at the required widths", async ({ page }, testInfo) => {

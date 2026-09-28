@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { PlayDraftApi } from "../draft/usePlayDraft";
 import { assignRoster } from "../tokens/playerIdentity";
 import { MarkerBadge } from "../components/MarkerBadge";
@@ -46,7 +46,7 @@ export function PlayScoring({ draft }: { draft: PlayDraftApi }) {
           const identity = roster[index];
           const result = evaluation.players[index];
           return (
-            <section className="plain-player-card" key={index} aria-labelledby={`plain-player-${index}`}>
+            <section className="plain-player-card" key={index} aria-labelledby={`plain-player-${index}`} style={{ "--player-accent": `var(--color-player-${(identity?.colorIndex ?? index) % 8 + 1}-fill)` } as CSSProperties}>
               <div className="plain-player-identity">{identity && <MarkerBadge identity={identity} />}<h2 id={`plain-player-${index}`}>{player.name}</h2></div>
               <label className="field score-field"><span className="field-label">Score</span><DecimalScoreField label={`${player.name}'s score`} value={scoreTexts[index] ?? ""} onChange={(value) => updateScore(index, value)} /></label>
               {play.outcome === "ranked" ? (

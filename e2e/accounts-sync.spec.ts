@@ -107,7 +107,7 @@ test("two clients adopt, sync offline work, resolve conflicts, isolate accounts,
     await firstPage.getByLabel("Setup code").focus();
     await firstPage.keyboard.press("Tab");
     await expect(firstPage.getByLabel("New password")).toBeFocused();
-    await firstPage.keyboard.press("Tab");
+    await firstPage.keyboard.press(testInfo.project.name === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab");
     await expect(firstPage.getByRole("button", { name: "Set password and sign in" })).toBeFocused();
     await setup(firstPage, first.code);
     await expect(firstPage.getByText(/1 players, 0 plays/)).toBeVisible();

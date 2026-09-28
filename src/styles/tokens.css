@@ -6,47 +6,50 @@
  */
 
 :root {
-  /* --- Semantic colours (Color/SemanticColors.swift) — light values --- */
-  --color-surface-base: #fafafa;
-  --color-surface-elevated: #ffffff;
-  --color-text-primary: #141414;
-  --color-text-secondary: #5c5c63;
-  --color-border: #e0e0e5;
-  /* A restrained highlight for the table register (e.g. the leading
-     player's total) — deliberately muted, not a shell-bright accent. */
-  --color-score-emphasis: #8a6a1e;
-  --color-warning: #9a5b00;
-  /* New for this web port — the Swift DesignTokens package has no
-     dedicated "destructive" semantic colour (SwiftUI's `role: .destructive`
-     resolves to the platform's system red instead). "Remove from
-     collection" is a genuinely new semantic role on the web, so this adds
-     one custom property rather than reusing --color-warning (amber) or a
-     literal in component CSS. */
-  --color-destructive: #b3261e;
-  --color-accent: #3559a8;
-  --color-focus: #245fd1;
+  color-scheme: light;
 
-  /* --- Player palette (Color/PlayerPalette.swift + ShellAccents.swift's
-     shared hue swatches) --- Eight fill/foreground pairs, in cycle order
-     (index % 8). Fill and foreground are identical in light and dark —
-     these are saturated brights, not surface colours, so they don't
-     re-resolve per appearance. */
-  --color-player-1-fill: #ef9fa8; /* coralRed */
-  --color-player-1-foreground: #141414; /* nearBlack */
-  --color-player-2-fill: #f29306; /* amber */
-  --color-player-2-foreground: #141414;
-  --color-player-3-fill: #23a548; /* meadowGreen */
-  --color-player-3-foreground: #141414;
-  --color-player-4-fill: #1faeae; /* teal */
-  --color-player-4-foreground: #141414;
-  --color-player-5-fill: #1c71c1; /* skyBlue */
-  --color-player-5-foreground: #fafafa; /* nearWhite */
-  --color-player-6-fill: #7735b8; /* grapePurple */
-  --color-player-6-foreground: #fafafa;
-  --color-player-7-fill: #de42a0; /* hotPink */
-  --color-player-7-foreground: #141414;
-  --color-player-8-fill: #303b59; /* slateNavy */
-  --color-player-8-foreground: #fafafa;
+  /* --- Pastel-candy semantic colours: warm wrapper + cocoa ink --- */
+  --color-surface-base: #fff8f2;
+  --color-surface-elevated: #fffefc;
+  --color-surface-raised: #fff2ea;
+  --color-surface-tint: #fbe2e6;
+  --color-text-primary: #352622;
+  --color-text-secondary: #705b55;
+  --color-border: #d9c3ba;
+  --color-border-strong: #9e7e73;
+  --color-score-emphasis: #7a5911;
+  --color-warning: #8a5600;
+  --color-destructive: #a2323d;
+  --color-success: #226b45;
+  --color-accent: #b13f5a;
+  --color-accent-foreground: #ffffff;
+  --color-focus: #5068b8;
+  --color-nav-background: #432a27;
+  --color-nav-foreground: #fff4ea;
+  --color-nav-muted: #ddc4ba;
+  --color-shadow: rgb(76 43 38 / 0.16);
+  --color-shadow-strong: rgb(76 43 38 / 0.24);
+  --color-candy-highlight: rgb(255 255 255 / 0.38);
+  --color-candy-edge: rgb(53 38 34 / 0.12);
+  --color-backdrop: rgb(27 20 22 / 0.68);
+
+  /* --- Pastel player palette, in deterministic cycle order --- */
+  --color-player-1-fill: #f3a6a0; /* coral */
+  --color-player-1-foreground: #352622;
+  --color-player-2-fill: #f6be7a; /* apricot */
+  --color-player-2-foreground: #352622;
+  --color-player-3-fill: #ebcf6a; /* butter */
+  --color-player-3-foreground: #352622;
+  --color-player-4-fill: #8fd3a5; /* mint */
+  --color-player-4-foreground: #352622;
+  --color-player-5-fill: #83cbd1; /* aqua */
+  --color-player-5-foreground: #352622;
+  --color-player-6-fill: #8fb0e8; /* periwinkle */
+  --color-player-6-foreground: #352622;
+  --color-player-7-fill: #b99adf; /* lavender */
+  --color-player-7-foreground: #352622;
+  --color-player-8-fill: #e7a4c7; /* pink */
+  --color-player-8-foreground: #352622;
 
   /* --- Spacing (Layout/Scales.swift Spacing) --- */
   --spacing-xxs: 2px;
@@ -60,10 +63,16 @@
 
   /* --- Corner radius (Layout/Scales.swift CornerRadius) --- */
   --radius-none: 0px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
   --radius-pill: 9999px;
+
+  /* --- Shallow tactile depth --- */
+  --shadow-card: 0 4px 14px var(--color-shadow);
+  --shadow-control: 0 3px 0 var(--color-shadow-strong);
+  --shadow-control-pressed: 0 1px 0 var(--color-shadow-strong);
+  --press-offset: 2px;
 
   /*
    * --- Typography (Typography/TypeScale.swift) ---
@@ -74,13 +83,14 @@
    * reasonable web UI; they are not ported from anywhere.
    */
   --font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-family-display: ui-rounded, "Arial Rounded MT Bold", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --type-display-large-size: 28px;
-  --type-display-large-weight: 700;
+  --type-display-large-weight: 800;
   --type-display-large-line-height: 1.2;
 
   --type-title-size: 20px;
-  --type-title-weight: 600;
+  --type-title-weight: 750;
   --type-title-line-height: 1.3;
 
   --type-body-size: 16px;
@@ -110,21 +120,63 @@
   --content-wide-width: 72rem;
   --focus-ring-width: 3px;
   --motion-fast: 160ms;
+  --motion-decorative: 220ms;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-surface-base: #121214;
-    --color-surface-elevated: #1e1e22;
-    --color-text-primary: #f2f2f2;
-    --color-text-secondary: #a8a8b0;
-    --color-border: #38383e;
-    --color-score-emphasis: #e0c070;
-    --color-warning: #f2b84b;
-    --color-destructive: #f2b8b5;
-    --color-accent: #9bb7ff;
-    --color-focus: #9bb7ff;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-surface-base: #1b1416;
+    --color-surface-elevated: #281d20;
+    --color-surface-raised: #35262a;
+    --color-surface-tint: #422b32;
+    --color-text-primary: #fff6f0;
+    --color-text-secondary: #cdbbb5;
+    --color-border: #564147;
+    --color-border-strong: #9c7882;
+    --color-score-emphasis: #f0d17f;
+    --color-warning: #f3c56b;
+    --color-destructive: #ff9ba1;
+    --color-success: #87d3aa;
+    --color-accent: #f08096;
+    --color-accent-foreground: #2b151a;
+    --color-focus: #afc2ff;
+    --color-nav-background: #120d0f;
+    --color-nav-foreground: #fff6f0;
+    --color-nav-muted: #cdbbb5;
+    --color-shadow: rgb(0 0 0 / 0.28);
+    --color-shadow-strong: rgb(0 0 0 / 0.42);
+    --color-candy-highlight: rgb(255 255 255 / 0.3);
+    --color-candy-edge: rgb(18 13 15 / 0.28);
+    --color-backdrop: rgb(0 0 0 / 0.74);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-surface-base: #1b1416;
+  --color-surface-elevated: #281d20;
+  --color-surface-raised: #35262a;
+  --color-surface-tint: #422b32;
+  --color-text-primary: #fff6f0;
+  --color-text-secondary: #cdbbb5;
+  --color-border: #564147;
+  --color-border-strong: #9c7882;
+  --color-score-emphasis: #f0d17f;
+  --color-warning: #f3c56b;
+  --color-destructive: #ff9ba1;
+  --color-success: #87d3aa;
+  --color-accent: #f08096;
+  --color-accent-foreground: #2b151a;
+  --color-focus: #afc2ff;
+  --color-nav-background: #120d0f;
+  --color-nav-foreground: #fff6f0;
+  --color-nav-muted: #cdbbb5;
+  --color-shadow: rgb(0 0 0 / 0.28);
+  --color-shadow-strong: rgb(0 0 0 / 0.42);
+  --color-candy-highlight: rgb(255 255 255 / 0.3);
+  --color-candy-edge: rgb(18 13 15 / 0.28);
+  --color-backdrop: rgb(0 0 0 / 0.74);
 }
 
 body {
@@ -135,6 +187,12 @@ body {
   font-weight: var(--type-body-weight);
   line-height: var(--type-body-line-height);
   margin: 0;
+  min-width: 320px;
+}
+
+::selection {
+  background: var(--color-surface-tint);
+  color: var(--color-text-primary);
 }
 
 *, *::before, *::after { box-sizing: border-box; }

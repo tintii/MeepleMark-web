@@ -102,7 +102,7 @@ export function CompletionControls({ draft, hasUnfinishedInput }: { draft: PlayD
       {error && <p role="alert" className="form-error">{error}</p>}
       <SaveStatus draft={draft} />
       <SyncStatusPanel />
-      <button type="button" onClick={handleComplete} disabled={(play.status === "complete" && !completionFailed) || pending}>{pending ? "Saving…" : completionFailed ? "Retry completion" : "Complete"}</button>
+      <button type="button" className="primary-button" onClick={handleComplete} disabled={(play.status === "complete" && !completionFailed) || pending}>{pending ? "Saving…" : completionFailed ? "Retry completion" : "Complete"}</button>
 
       {stage === "offer" && uncollectedGame && (
         <Dialog title={`Add ${uncollectedGame.name} to your collection?`} onCancel={() => setStage("recorded")} pending={pending}>

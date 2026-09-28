@@ -13,6 +13,7 @@ import { AccountProvider } from "./account/AccountContext";
 import { useAccount } from "./account/accountState";
 import { SyncCoordinator } from "./components/SyncStatus";
 import { Conflicts } from "./pages/Conflicts";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 function NavShell() {
   const { workspace } = useAccount();
@@ -26,7 +27,10 @@ function NavShell() {
           <NavLink to="/collection"><span aria-hidden="true">◆</span><span>Collection</span></NavLink>
           <NavLink to="/players"><span aria-hidden="true">▲</span><span>Players</span></NavLink>
         </nav>
-        <NavLink className="workspace-indicator" to="/account" aria-label="Account and workspace"><span aria-live="polite">{workspace.kind === "account" ? workspace.displayName : workspace.kind === "loading" ? "…" : "Guest"}</span></NavLink>
+        <div className="app-chrome-actions">
+          <NavLink className="workspace-indicator" to="/account" aria-label="Account and workspace"><span aria-live="polite">{workspace.kind === "account" ? workspace.displayName : workspace.kind === "loading" ? "…" : "Guest"}</span></NavLink>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

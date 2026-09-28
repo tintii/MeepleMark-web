@@ -1,31 +1,36 @@
 # Web-first persistence and self-hosting direction
 
-Recorded: 2026-09-26. Status: architecture direction, not an implemented backend or an apply-ready OpenSpec change.
+Recorded: 2026-09-26. Updated: 2026-09-27. Status: implemented for the
+`self-hosted-accounts-and-sync` change; deployment remains operator-managed.
 
 Implementation is now specified in
 [self-hosted-accounts-and-sync](../openspec/changes/self-hosted-accounts-and-sync/proposal.md),
 with a [technical design](../openspec/changes/self-hosted-accounts-and-sync/design.md)
 and [ordered tasks](../openspec/changes/self-hosted-accounts-and-sync/tasks.md).
-That proposal uses operator-created local accounts as its stated draft default,
-retains guest scoring, selects Fastify/PostgreSQL, specifies visible revision
-conflicts, and includes Docker/Compose acceptance. It keeps all initial games
-user-scoped; a shared catalogue is deferred. These are proposed implementation
-choices, not functionality already shipped. The open topics below describe the
-earlier direction and are resolved for this scope by that proposal unless noted.
+The implementation uses operator-created local accounts, retains guest scoring,
+uses Fastify/PostgreSQL, exposes visible revision conflicts, and ships a
+Docker/Compose deployment. All initial games remain user-scoped; a shared
+catalogue is deferred.
 
 ## Direction and scope
 
 Prioritize MeepleMark-web for phones and desktops. The product owner is leaning toward web-only delivery; permanent retirement of native iOS is not decided. The Swift implementation remains a feature/visual reference and its golden fixtures remain the scoring contract.
 
-Self-hosting is the deployment priority. PostgreSQL is the working server-database choice. User accounts and recorded players are separate concepts. The eventual server-backed release needs Docker packaging and a documented Docker Compose deployment. No managed hosting or identity provider is a required dependency of this direction.
+Self-hosting is the deployment priority. PostgreSQL is the server database.
+User accounts and recorded players are separate concepts. The repository ships
+Docker packaging and a documented Compose deployment; no managed hosting or
+identity provider is required.
 
-This supersedes the earlier product-wide prohibition on accounts and a backend. It does not retroactively expand `ios-parity-responsive-web`: that completed checklist describes a local browser implementation. The current application still stores data in IndexedDB; this document introduces no backend, login, synchronization, or containers.
+This supersedes the earlier product-wide prohibition on accounts and a backend.
+It does not retroactively expand `ios-parity-responsive-web`: that completed
+checklist describes the guest/local browser implementation. The application now
+supports both that guest workspace and separately scoped account workspaces.
 
 The [iOS repository impact note](../../MeepleMark/docs/web-first-direction.md) records the native roadmap implications. Cross-repository relative links assume sibling checkouts.
 
 ## Persistence responsibilities
 
-Proposed architecture:
+Implemented architecture:
 
 ```mermaid
 flowchart LR
@@ -58,9 +63,11 @@ If canonical game metadata is shared, collection membership and user-authored sh
 
 ## Offline synchronization and local-data migration
 
-The direction retains local-first entry with account-backed synchronization. Optional guest use is the preferred continuity path for today's no-setup workflow, but the first release's guest/login policy is not decided.
+The implementation retains local-first entry with account-backed synchronization.
+Guest use remains the no-setup path; account workspaces are optional and require
+operator provisioning.
 
-Before implementation, specify:
+Implemented synchronization guarantees include:
 
 - Stable client-generated IDs, record revisions, and idempotent mutation IDs so retries cannot duplicate plays.
 - Conflict detection and visible recovery for simultaneous edits; do not silently adopt last-write-wins for scores.
@@ -72,11 +79,17 @@ Before implementation, specify:
 
 Each installation has its own accounts/database. Cross-installation synchronization, shared live scoring by several users, and native iOS synchronization are outside the initial direction.
 
-## Self-hosted Docker deployment target
+## Self-hosted Docker deployment
 
-Start with a single-host Compose deployment. Logical components are HTTPS ingress, an application service serving the built frontend and API, and PostgreSQL on an internal network. The ingress may be the operator's existing reverse proxy. The server framework and exact container split remain implementation choices.
+The supported topology is a single-host Compose deployment with an application
+service serving the built frontend and API, a one-shot migration service, and
+PostgreSQL on an internal network. The operator supplies HTTPS ingress; the
+sample Caddy configuration is not an embedded certificate service.
 
-Deliver Dockerfile(s), `compose.yaml`, a non-secret example configuration, migrations, and operator instructions. Compose represents services, networks, volumes, and secrets in one deployment definition. [Docker Compose documentation](https://docs.docker.com/compose/intro/compose-application-model/)
+The repository includes a multi-stage `Dockerfile`, `compose.yaml`,
+`.env.example`, numbered migrations, and operator instructions. Compose
+represents services, networks, volumes, and secrets in one deployment
+definition. [Docker Compose documentation](https://docs.docker.com/compose/intro/compose-application-model/)
 
 The delivery plan must cover:
 
@@ -88,16 +101,23 @@ The delivery plan must cover:
 - Tested database backup/restore, upgrade instructions, and schema-compatible rollback. A persistent volume alone is not a backup.
 - Fresh-install and container-replacement smoke tests proving accounts, players, plays, templates, and memberships survive.
 
-Docker is a delivery requirement for the server-backed phase. No image is built or service deployed by this documentation update.
+No hosted service, automated TLS, off-host backup destination, or monitoring
+stack is bundled. Operators own their domain, proxy, secrets, backup retention,
+and upgrade windows.
 
-## Delivery sequence and open decisions
+## Current boundaries and follow-up work
 
-1. Propose the backend foundation: ownership model, PostgreSQL schema, API, authentication/session handling, and operator account provisioning/recovery.
-2. Propose browser synchronization and adoption of existing local records, including conflicts, deletions, and account isolation.
-3. Package and verify Compose deployment, migrations, backup/restore, and upgrades before calling the server-backed release self-hostable.
+The implemented first release deliberately excludes public registration, email
+recovery, OIDC, shared catalogues, groups, live multi-user scoring, native iOS
+sync, cross-installation sync, federation, and general import/export. Successful
+mutation receipts, change metadata, and tombstones are retained for the life of
+an account; cleanup needs a future cursor-expiry design. The initial server also
+serializes mutations per user, which is appropriate for personal scoring but is
+not a high-throughput collaboration design.
 
-Develop with the Compose target in mind from the backend foundation, even if final packaging is a separate work item. Prefer one coherent backend over unnecessary distributed services.
-
-Still open: authentication method, registration/admin provisioning and recovery, guest policy, server framework/database access layer, concrete sync conflict behaviour, account deletion/retention, and ingress/domain setup. Resolve these in the implementation proposal; none is claimed as completed here.
+Operator provisioning/recovery, guest continuity, record-level conflict choices,
+confirmed account deletion, and restore-epoch handling are settled for this
+scope. Ingress/domain configuration and backup retention remain installation
+policy. Native retirement remains undecided.
 
 BGG integration remains separate. A backend does not authorize shipping BGG tokens in browser assets or establish a BGG authentication design.

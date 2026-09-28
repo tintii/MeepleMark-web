@@ -21,9 +21,9 @@ export const Spacing = {
 // --- Corner radius (Layout/Scales.swift CornerRadius), px ---
 export const CornerRadius = {
   none: 0,
-  sm: 4,
-  md: 8,
-  lg: 16,
+  sm: 8,
+  md: 12,
+  lg: 20,
   pill: 9999,
 } as const;
 
@@ -33,13 +33,24 @@ export const CornerRadius = {
 // `var(--color-x)` in stylesheets. These are provided for non-CSS contexts
 // (e.g. canvas, computed contrast checks).
 export const SemanticColors = {
-  surfaceBase: { light: "#FAFAFA", dark: "#121214" },
-  surfaceElevated: { light: "#FFFFFF", dark: "#1E1E22" },
-  textPrimary: { light: "#141414", dark: "#F2F2F2" },
-  textSecondary: { light: "#5C5C63", dark: "#A8A8B0" },
-  border: { light: "#E0E0E5", dark: "#38383E" },
-  scoreEmphasis: { light: "#8A6A1E", dark: "#E0C070" },
-  warning: { light: "#9A5B00", dark: "#F2B84B" },
+  surfaceBase: { light: "#FFF8F2", dark: "#1B1416" },
+  surfaceElevated: { light: "#FFFEFC", dark: "#281D20" },
+  surfaceRaised: { light: "#FFF2EA", dark: "#35262A" },
+  surfaceTint: { light: "#FBE2E6", dark: "#422B32" },
+  textPrimary: { light: "#352622", dark: "#FFF6F0" },
+  textSecondary: { light: "#705B55", dark: "#CDBBB5" },
+  border: { light: "#D9C3BA", dark: "#564147" },
+  borderStrong: { light: "#9E7E73", dark: "#9C7882" },
+  scoreEmphasis: { light: "#7A5911", dark: "#F0D17F" },
+  warning: { light: "#8A5600", dark: "#F3C56B" },
+  destructive: { light: "#A2323D", dark: "#FF9BA1" },
+  success: { light: "#226B45", dark: "#87D3AA" },
+  accent: { light: "#B13F5A", dark: "#F08096" },
+  accentForeground: { light: "#FFFFFF", dark: "#2B151A" },
+  focus: { light: "#5068B8", dark: "#AFC2FF" },
+  navBackground: { light: "#432A27", dark: "#120D0F" },
+  navForeground: { light: "#FFF4EA", dark: "#FFF6F0" },
+  navMuted: { light: "#DDC4BA", dark: "#CDBBB5" },
 } as const;
 
 // --- Player palette (Color/PlayerPalette.swift), in cycle order ---
@@ -51,14 +62,14 @@ export interface AccentPair {
 }
 
 export const PlayerPalette: AccentPair[] = [
-  { fill: "#EF9FA8", foreground: "#141414" }, // player1CoralRed
-  { fill: "#F29306", foreground: "#141414" }, // player2Amber
-  { fill: "#23A548", foreground: "#141414" }, // player3MeadowGreen
-  { fill: "#1FAEAE", foreground: "#141414" }, // player4Teal
-  { fill: "#1C71C1", foreground: "#FAFAFA" }, // player5SkyBlue
-  { fill: "#7735B8", foreground: "#FAFAFA" }, // player6GrapePurple
-  { fill: "#DE42A0", foreground: "#141414" }, // player7HotPink
-  { fill: "#303B59", foreground: "#FAFAFA" }, // player8SlateNavy
+  { fill: "#F3A6A0", foreground: "#352622" }, // coral
+  { fill: "#F6BE7A", foreground: "#352622" }, // apricot
+  { fill: "#EBCF6A", foreground: "#352622" }, // butter
+  { fill: "#8FD3A5", foreground: "#352622" }, // mint
+  { fill: "#83CBD1", foreground: "#352622" }, // aqua
+  { fill: "#8FB0E8", foreground: "#352622" }, // periwinkle
+  { fill: "#B99ADF", foreground: "#352622" }, // lavender
+  { fill: "#E7A4C7", foreground: "#352622" }, // pink
 ];
 
 export function playerColor(index: number): AccentPair {
@@ -71,8 +82,8 @@ export function playerColor(index: number): AccentPair {
 // tableNumeral; concrete sizes below are new for this web port (see the
 // comment in tokens.css), not ported from anywhere.
 export const TypeScale = {
-  displayLarge: { fontSize: 28, fontWeight: 700, lineHeight: 1.2 },
-  title: { fontSize: 20, fontWeight: 600, lineHeight: 1.3 },
+  displayLarge: { fontSize: 28, fontWeight: 800, lineHeight: 1.2 },
+  title: { fontSize: 20, fontWeight: 750, lineHeight: 1.3 },
   body: { fontSize: 16, fontWeight: 400, lineHeight: 1.5 },
   caption: { fontSize: 13, fontWeight: 400, lineHeight: 1.4 },
   tableNumeral: { fontSize: 16, fontWeight: 600, lineHeight: 1.3, usesTabularFigures: true },
