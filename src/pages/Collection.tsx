@@ -2,9 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { addToCollection, findOrCreateGame, listGames, type GameRecord } from "../storage/db";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
+import { useAccount } from "../account/accountState";
 
 /** `/collection` — owned games, alphabetical. */
 export function Collection() {
+  const { workspace } = useAccount();
+  const canWrite = workspace.kind === "guest" || (workspace.kind === "account" && workspace.capabilities.write);
   const [games, setGames] = useState<GameRecord[] | null>(null);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export function Collection() {
     <div className="page">
       <PageHeader title="Collection" subtitle="Games you own, whether played yet or not." />
 
-      <GroupedSection title="Add a game">
+      {canWrite ? <GroupedSection title="Add a game">
         <form onSubmit={handleAdd} className="inline-form">
           <label className="field">
             <span className="field-label">Game name</span>
@@ -54,7 +57,7 @@ export function Collection() {
           {error && <p role="alert" className="form-error">{error}</p>}
           <button type="submit">Add to collection</button>
         </form>
-      </GroupedSection>
+      </GroupedSection> : <p className="type-caption">This account is read-only. Your downloaded collection is available to browse.</p>}
 
       {games === null && <p className="type-caption">Loading…</p>}
       {games !== null && games.length === 0 && (

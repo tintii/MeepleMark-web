@@ -1,9 +1,10 @@
 import { readConfig } from "./config";
 import { createPool } from "./db";
-import { createAccount, deleteAccount, issueRecoveryCode, revokeSessions, rotateRecoveryEpoch, setAccountDisabled } from "./operator";
+import { createAccount, deleteAccount, issueRecoveryCode, revokeSessions, rotateRecoveryEpoch, setAccountDisabled, setAccountRole } from "./operator";
+import { accountRoleSchema } from "./protocol";
 
 function usage(): never {
-  throw new Error("Usage: account <create|recovery|disable|enable|revoke|delete> <username> [display-name|--confirm username], or installation rotate-recovery --confirm ROTATE");
+  throw new Error("Usage: account <create|recovery|disable|enable|revoke|delete|role> <username> [display-name|role|--confirm username], or installation rotate-recovery --confirm ROTATE");
 }
 
 const [area, command, username, ...rest] = process.argv.slice(2);
@@ -37,6 +38,13 @@ try {
       await revokeSessions(pool, username);
       process.stdout.write("Sessions revoked.\n");
       break;
+    case "role": {
+      if (rest.length !== 1) usage();
+      const role = accountRoleSchema.parse(rest[0]);
+      await setAccountRole(pool, username, role);
+      process.stdout.write(`Account role changed to ${role}.\n`);
+      break;
+    }
     case "delete": {
       const flag = rest[0];
       const confirmation = rest[1];

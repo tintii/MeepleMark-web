@@ -50,7 +50,7 @@ test("account and conflict routes use the offline shell without caching API data
   const database = await openIsolatedApp(page, testInfo, "/account");
   await expect(page.getByText("Ready for offline use")).toBeVisible({ timeout: 15_000 });
   await page.evaluate(() => navigator.serviceWorker.ready);
-  await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
 
   await page.goto(`/conflicts?testDb=${database}`);
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
@@ -71,7 +71,7 @@ test("account and conflict routes use the offline shell without caching API data
     expect(apiResult.body).not.toContain('<div id="root">');
 
     await page.goto(`/account?testDb=${database}`);
-    await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
   } finally {
     await context.setOffline(false);
   }

@@ -25,6 +25,7 @@ async function fingerprint(document: unknown): Promise<string> {
 }
 
 export async function adoptGuestData(account: RememberedAccount): Promise<AdoptionProgress> {
+  if (!account.capabilities.write) throw new Error("This account is read-only. Guest records remain unchanged.");
   const guest = await openWorkspaceDb({ kind: "guest" });
   const destination = await openWorkspaceDb(account);
   const sourceWorkspaceId = guestWorkspaceId();
@@ -59,4 +60,3 @@ export async function adoptGuestData(account: RememberedAccount): Promise<Adopti
   }
   return progress;
 }
-

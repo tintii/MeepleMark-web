@@ -9,9 +9,20 @@ export const MAX_ADOPTION_BATCH_SIZE = 100;
 
 export const usernameSchema = z.string().trim().min(3).max(64).regex(/^[\p{L}\p{N}._-]+$/u);
 export const passwordSchema = z.string().min(12).max(1024);
+export const displayNameSchema = z.string().trim().min(1).max(128);
+export const accountRoleSchema = z.enum(["readonly", "user", "admin"]);
+export const registrationRoleSchema = z.enum(["readonly", "user"]);
+export const registerRequestSchema = z.object({ username: usernameSchema, password: passwordSchema, displayName: displayNameSchema.optional() }).strict();
 export const setupRequestSchema = z.object({ code: z.string().min(20).max(512), password: passwordSchema }).strict();
 export const loginRequestSchema = z.object({ username: usernameSchema, password: z.string().min(1).max(1024) }).strict();
 export const passwordChangeSchema = z.object({ currentPassword: z.string().min(1).max(1024), newPassword: passwordSchema }).strict();
+export const paginationSchema = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(25) });
+export const adminUsersQuerySchema = paginationSchema.extend({ search: z.string().trim().max(128).default(""), role: accountRoleSchema.optional(), status: z.enum(["enabled", "disabled"]).optional() }).strict();
+export const adminAuditQuerySchema = paginationSchema.strict();
+export const adminRoleRequestSchema = z.object({ role: accountRoleSchema }).strict();
+export const adminStatusRequestSchema = z.object({ disabled: z.boolean() }).strict();
+export const adminDeleteRequestSchema = z.object({ confirmation: z.string().min(1).max(64) }).strict();
+export const registrationSettingsSchema = z.object({ enabled: z.boolean(), defaultRole: registrationRoleSchema }).strict();
 
 export const syncContextSchema = z.object({
   protocolVersion: z.literal(PROTOCOL_VERSION),
@@ -62,4 +73,3 @@ export const adoptionRequestSchema = z.object({
 export type SyncContext = z.infer<typeof syncContextSchema>;
 export type Mutation = z.infer<typeof mutationSchema>;
 export type AdoptionRequest = z.infer<typeof adoptionRequestSchema>;
-

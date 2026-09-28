@@ -14,6 +14,14 @@ import { useAccount } from "./account/accountState";
 import { SyncCoordinator } from "./components/SyncStatus";
 import { Conflicts } from "./pages/Conflicts";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { Admin } from "./pages/Admin";
+import type { ReactNode } from "react";
+
+function WriteRoute({ children }: { children: ReactNode }) {
+  const { workspace } = useAccount();
+  if (workspace.kind === "account" && !workspace.capabilities.write) return <div className="page"><h1 className="type-title">Read-only account</h1><p>You can browse downloaded records, but this route changes account data. Pending edits are retained on this device.</p></div>;
+  return children;
+}
 
 function NavShell() {
   const { workspace } = useAccount();
@@ -21,7 +29,10 @@ function NavShell() {
     <header className="app-chrome">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="app-chrome-inner">
-        <NavLink className="product-name" to="/" aria-label={`${PRODUCT_NAME} home`}>{PRODUCT_NAME}</NavLink>
+        <NavLink className="product-name" to="/" aria-label={`${PRODUCT_NAME} home`}>
+          <img src="/favicon.svg" alt="" />
+          <span>Meeple<span className="product-name-accent">Mark</span></span>
+        </NavLink>
         <nav className="nav-shell" aria-label="Primary navigation">
           <NavLink to="/" end><span aria-hidden="true">●</span><span>Plays</span></NavLink>
           <NavLink to="/collection"><span aria-hidden="true">◆</span><span>Collection</span></NavLink>
@@ -47,14 +58,15 @@ function RoutedApp() {
         {workspace.kind === "loading" ? <div className="page"><p className="type-caption" role="status">Opening workspace…</p></div> : (
           <Routes>
             <Route path="/" element={<PlayList />} />
-            <Route path="/play/new" element={<NewPlay />} />
-            <Route path="/play/:id" element={<PlayRoute />} />
+            <Route path="/play/new" element={<WriteRoute><NewPlay /></WriteRoute>} />
+            <Route path="/play/:id" element={<WriteRoute><PlayRoute /></WriteRoute>} />
             <Route path="/collection" element={<Collection />} />
             <Route path="/collection/:gameId" element={<GameDetail />} />
-            <Route path="/collection/:gameId/template" element={<TemplateEditor />} />
+            <Route path="/collection/:gameId/template" element={<WriteRoute><TemplateEditor /></WriteRoute>} />
             <Route path="/players" element={<Players />} />
             <Route path="/account" element={<Account />} />
             <Route path="/conflicts" element={<Conflicts />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         )}
       </main>

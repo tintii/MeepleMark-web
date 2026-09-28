@@ -12,6 +12,7 @@ import {
   type SyncContext,
 } from "./protocol";
 import { decodePlayDocument, validateEntityDocument, type EntityType } from "../src/shared/documents";
+import { requireWriteAccess } from "./permissions";
 
 const TABLES: Record<EntityType, string> = { game: "user_games", player: "players", play: "plays" };
 
@@ -98,6 +99,7 @@ export interface MutationResult {
 
 export async function applyMutation(pool: Pool, ownerId: string, context: SyncContext, mutation: Mutation): Promise<MutationResult> {
   return inTransaction(pool, async (client) => {
+    await requireWriteAccess(client, ownerId);
     await assertSyncContext(client, context, ownerId);
     await client.query("SELECT current_sequence FROM sync_state WHERE owner_id = $1 FOR UPDATE", [ownerId]);
     const requestFingerprint = fingerprint(mutation);

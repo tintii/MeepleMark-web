@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "./app";
 import type { ServerConfig } from "./config";
 import { runMigrations } from "./migrate";
-import { createAccount, setAccountDisabled } from "./operator";
+import { createAccount, issueRecoveryCode, setAccountDisabled } from "./operator";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const integration = databaseUrl ? describe : describe.skip;
@@ -59,5 +59,32 @@ integration("account authentication", () => {
     expect((await app.inject({ method: "GET", url: "/api/v1/auth/session", headers: { cookie } })).statusCode).toBe(200);
     await setAccountDisabled(pool, "setup-user", true);
     expect((await app.inject({ method: "GET", url: "/api/v1/auth/session", headers: { cookie } })).statusCode).toBe(401);
+  });
+
+  it("registers only under the serialized installation policy and rejects privileged fields", async () => {
+    const closed = await app.inject({ method: "POST", url: "/api/v1/auth/register", headers: { origin: config.APP_ORIGIN }, payload: { username: "PublicUser", password: "correct horse battery" } });
+    expect(closed.statusCode).toBe(403);
+    expect(closed.json().error).toBe("registration_closed");
+    await pool.query("UPDATE installation SET registration_enabled=TRUE, registration_default_role='readonly'");
+    const forged = await app.inject({ method: "POST", url: "/api/v1/auth/register", headers: { origin: config.APP_ORIGIN }, payload: { username: "forged-user", password: "correct horse battery", role: "admin" } });
+    expect(forged.statusCode).toBe(400);
+    const attempts = await Promise.all(["PublicUser", "publicuser"].map((username) => app.inject({ method: "POST", url: "/api/v1/auth/register", headers: { origin: config.APP_ORIGIN }, payload: { username, displayName: "Public User", password: "correct horse battery" } })));
+    expect(attempts.map((reply) => reply.statusCode).sort()).toEqual([201, 409]);
+    expect((await pool.query("SELECT role FROM users WHERE username='publicuser'")).rows[0].role).toBe("readonly");
+    const login = await app.inject({ method: "POST", url: "/api/v1/auth/login", headers: { origin: config.APP_ORIGIN }, payload: { username: "PUBLICUSER", password: "correct horse battery" } });
+    expect(login.statusCode).toBe(200);
+    const session = await app.inject({ method: "GET", url: "/api/v1/auth/session", headers: { cookie: sessionCookie(login.headers) } });
+    expect(session.json()).toMatchObject({ role: "readonly", capabilities: { write: false, admin: false } });
+
+    const lock = await pool.connect(); await lock.query("BEGIN"); await lock.query("SELECT singleton FROM installation WHERE singleton=TRUE FOR UPDATE");
+    const afterClosure = app.inject({ method: "POST", url: "/api/v1/auth/register", headers: { origin: config.APP_ORIGIN, "x-forwarded-for": "203.0.113.7" }, payload: { username: "closed-race", password: "correct horse battery" } });
+    await lock.query("UPDATE installation SET registration_enabled=FALSE"); await lock.query("COMMIT"); lock.release();
+    expect((await afterClosure).statusCode).toBe(403);
+    const limited = await app.inject({ method: "POST", url: "/api/v1/auth/register", headers: { origin: config.APP_ORIGIN, "x-forwarded-for": "198.51.100.9" }, payload: { username: "rate-bypass", password: "correct horse battery" } });
+    expect(limited.statusCode).toBe(429); expect(limited.headers["cache-control"]).toBe("no-store");
+
+    const recovery = await issueRecoveryCode(pool, "publicuser");
+    const recovered = await app.inject({ method: "POST", url: "/api/v1/auth/setup", headers: { origin: config.APP_ORIGIN }, payload: { code: recovery.code, password: "replacement horse battery" } });
+    expect(recovered.statusCode).toBe(200); expect((await pool.query("SELECT role FROM users WHERE username='publicuser'")).rows[0].role).toBe("readonly");
   });
 });

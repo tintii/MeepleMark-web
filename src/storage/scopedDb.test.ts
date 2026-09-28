@@ -16,8 +16,8 @@ async function deleteDatabase(name: string): Promise<void> {
   });
 }
 
-const accountA: AccountWorkspace = { kind: "account", origin: "https://example.test", installationId: "install-a", accountId: "account-a" };
-const accountB: AccountWorkspace = { kind: "account", origin: "https://example.test", installationId: "install-a", accountId: "account-b" };
+const accountA: AccountWorkspace = { kind: "account", origin: "https://example.test", installationId: "install-a", accountId: "account-a", capabilities: { write: true, admin: false } };
+const accountB: AccountWorkspace = { kind: "account", origin: "https://example.test", installationId: "install-a", accountId: "account-b", capabilities: { write: true, admin: false } };
 
 beforeEach(async () => {
   await closeWorkspaceConnectionsForTests();
@@ -61,5 +61,11 @@ describe("scoped browser repositories", () => {
     expect(await db.get("games", "interrupted")).toBeUndefined();
     expect(await db.get("outbox", "game:interrupted")).toBeUndefined();
   });
-});
 
+  it("denies account mutations when write capability is absent without creating local state", async () => {
+    const readonly = { ...accountA, accountId: "readonly", capabilities: { write: false, admin: false } };
+    setActiveWorkspace(readonly);
+    await expect(putScopedRecord("players", { id: "blocked", displayName: "Blocked" })).rejects.toThrow("read-only");
+    expect(await (await openWorkspaceDb(readonly)).get("players", "blocked")).toBeUndefined();
+  });
+});

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createPlayer, deletePlayer, listPlayers, updatePlayer, type PlayerRecord } from "../storage/db";
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
+import { useAccount } from "../account/accountState";
 
 const COLOR_NAMES = ["Coral", "Apricot", "Butter", "Mint", "Aqua", "Periwinkle", "Lavender", "Pink"];
 
@@ -14,6 +15,8 @@ interface PlayerForm {
 const emptyForm = (): PlayerForm => ({ displayName: "", bggUsername: "", preferredColorIndex: null });
 
 export function Players() {
+  const { workspace } = useAccount();
+  const canWrite = workspace.kind === "guest" || (workspace.kind === "account" && workspace.capabilities.write);
   const [players, setPlayers] = useState<PlayerRecord[] | null>(null);
   const [newPlayer, setNewPlayer] = useState<PlayerForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,14 +91,14 @@ export function Players() {
     <div className="page">
       <PageHeader title="Players" subtitle="Local player details for faster setup. No network requests are made." />
 
-      <GroupedSection title="Add player">
+      {canWrite ? <GroupedSection title="Add player">
         <form onSubmit={handleAdd}>
           <label className="field"><span className="field-label">Display name</span><input value={newPlayer.displayName} onChange={(event) => setNewPlayer((form) => ({ ...form, displayName: event.target.value }))} /></label>
           <label className="field"><span className="field-label">BGG username <span className="field-hint">(optional, stored locally)</span></span><input value={newPlayer.bggUsername} onChange={(event) => setNewPlayer((form) => ({ ...form, bggUsername: event.target.value }))} /></label>
           <label className="field"><span className="field-label">Preferred colour</span>{colorSelect(newPlayer.preferredColorIndex, (preferredColorIndex) => setNewPlayer((form) => ({ ...form, preferredColorIndex })))}</label>
           <button type="submit">Add player</button>
         </form>
-      </GroupedSection>
+      </GroupedSection> : <p className="type-caption">This account is read-only. Saved players are available to browse.</p>}
 
       {error && <p role="alert" className="form-error">{error}</p>}
       {players === null && <p className="type-caption">Loading…</p>}
@@ -115,7 +118,7 @@ export function Players() {
                 <div className="directory-summary">
                   <span className={`player-colour-swatch${player.preferredColorIndex == null ? " is-automatic" : ""}`} style={player.preferredColorIndex == null ? undefined : { background: `var(--color-player-${player.preferredColorIndex + 1}-fill)` }} aria-label={player.preferredColorIndex == null ? "Automatic colour" : `${COLOR_NAMES[player.preferredColorIndex]} preferred colour`} role="img" />
                   <div><strong>{player.displayName}</strong>{player.bggUsername && <div className="type-caption">BGG: {player.bggUsername}</div>}</div>
-                  <button type="button" onClick={() => startEditing(player)}>Edit</button>
+                  {canWrite && <button type="button" onClick={() => startEditing(player)}>Edit</button>}
                 </div>
               )}
             </li>

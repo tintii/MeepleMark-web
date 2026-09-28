@@ -4,6 +4,7 @@ import { addToCollection, deletePlay, getGame, playSummariesForGame, removeFromC
 import { PlayRowItem } from "../components/PlayRowItem";
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
+import { useAccount } from "../account/accountState";
 
 /**
  * `/collection/:gameId` — a game, its plays, and the score-sheet /
@@ -13,6 +14,8 @@ import { GroupedSection, PageHeader } from "../components/PageHeader";
  * icon-button placement read as accidental.
  */
 export function GameDetail() {
+  const { workspace } = useAccount();
+  const canWrite = workspace.kind === "guest" || (workspace.kind === "account" && workspace.capabilities.write);
   const { gameId } = useParams<{ gameId: string }>();
   const [game, setGame] = useState<GameRecord | null | undefined>(undefined);
   const [plays, setPlays] = useState<PlaySummary[]>([]);
@@ -77,11 +80,11 @@ export function GameDetail() {
       <PageHeader
         title={game.name}
         parent={{ to: "/collection", label: "Collection" }}
-        actions={<Link className="button-link" to="/play/new" state={{ presetGameName: game.name }}>Add Play</Link>}
+        actions={canWrite ? <Link className="button-link" to="/play/new" state={{ presetGameName: game.name }}>Add Play</Link> : undefined}
       />
 
       <div className="action-row">
-        {game.ownedAt == null && (
+        {canWrite && game.ownedAt == null && (
           <button type="button" onClick={handleAddToCollection}>
             Add to collection
           </button>
@@ -89,9 +92,9 @@ export function GameDetail() {
       </div>
 
       <GroupedSection title="Score sheet">
-        <Link className="button-link" to={`/collection/${game.id}/template`}>
+        {canWrite && <Link className="button-link" to={`/collection/${game.id}/template`}>
           {game.localTemplate ? "Edit score sheet" : "Add a score sheet"}
-        </Link>
+        </Link>}
         {game.localTemplate && (
           <p className="type-caption">{game.localTemplate.categories.map((c) => c.label).join(", ")}</p>
         )}
@@ -104,12 +107,12 @@ export function GameDetail() {
       ) : (
         <ul className="play-list" aria-label={`${game.name} play history`} data-dialog-fallback tabIndex={-1}>
           {plays.map((row) => (
-            <PlayRowItem key={row.id} row={row} onDelete={setDeletingPlay} />
+            <PlayRowItem key={row.id} row={row} onDelete={canWrite ? setDeletingPlay : undefined} />
           ))}
         </ul>
       )}
 
-      {game.ownedAt != null && (
+      {canWrite && game.ownedAt != null && (
         <section className="destructive-section">
           <button type="button" className="destructive-button" onClick={() => setConfirmingRemoval(true)}>
             Remove from collection

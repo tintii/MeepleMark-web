@@ -9,6 +9,7 @@ export function AdoptionPanel({ account }: { account: RememberedAccount }) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { const timer = setTimeout(() => void adoptionPreview().then(setPreview), 0); return () => clearTimeout(timer); }, []);
   if (!preview || preview.total === 0 || skipped) return null;
+  if (!account.capabilities.write) return <section className="grouped-section"><h2 className="section-heading">Guest data</h2><div className="grouped-section-body"><p>This account is read-only. Guest records remain available in the guest workspace and cannot be copied into this account.</p></div></section>;
   return <section className="grouped-section"><h2 className="section-heading">Guest data</h2><div className="grouped-section-body">
     <p>Copy into <strong>{account.displayName}</strong>: {preview.games} games, {preview.players} players, {preview.plays} plays. Guest originals remain available.</p>
     {error && <p role="alert" className="form-error">{error}</p>}
@@ -16,4 +17,3 @@ export function AdoptionPanel({ account }: { account: RememberedAccount }) {
     <div className="action-row"><button type="button" onClick={() => void adoptGuestData(account).then(setProgress).catch((reason) => setError(String(reason)))}>Copy guest data</button><button type="button" onClick={() => setSkipped(true)}>Skip</button></div>
   </div></section>;
 }
-

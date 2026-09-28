@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { evaluate } from "../src/engine/evaluate";
 import { decodePlayDocument, encodePlayDocument } from "../src/shared/documents";
-import { mutationRequestSchema } from "./protocol";
+import { adminRoleRequestSchema, mutationRequestSchema, registerRequestSchema, registrationSettingsSchema } from "./protocol";
 
 describe("server shared scoring contract", () => {
   it("evaluates the exact-decimal golden document unchanged in the Node build", async () => {
@@ -19,5 +19,10 @@ describe("server shared scoring contract", () => {
   it("validates mutation envelopes", () => {
     expect(() => mutationRequestSchema.parse({ context: {}, mutation: {} })).toThrow();
   });
-});
 
+  it("rejects privileged public registration fields and invalid administrative roles", () => {
+    expect(() => registerRequestSchema.parse({ username: "valid-user", password: "long enough password", role: "admin" })).toThrow();
+    expect(() => adminRoleRequestSchema.parse({ role: "owner" })).toThrow();
+    expect(() => registrationSettingsSchema.parse({ enabled: true, defaultRole: "admin" })).toThrow();
+  });
+});

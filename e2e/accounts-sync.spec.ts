@@ -15,6 +15,7 @@ async function openPage(context: BrowserContext, path: string): Promise<Page> {
 
 async function setup(page: Page, code: string): Promise<void> {
   await page.goto("/account");
+  await page.getByRole("button", { name: "Use a recovery or activation code" }).click();
   await page.getByLabel("Setup code").fill(code);
   await page.getByLabel("New password").fill(password);
   await page.getByRole("button", { name: "Set password and sign in" }).click();
@@ -104,6 +105,7 @@ test("two clients adopt, sync offline work, resolve conflicts, isolate accounts,
 
     await firstPage.setViewportSize({ width: 390, height: 844 });
     await firstPage.goto("/account");
+    await firstPage.getByRole("button", { name: "Use a recovery or activation code" }).click();
     await firstPage.getByLabel("Setup code").focus();
     await firstPage.keyboard.press("Tab");
     await expect(firstPage.getByLabel("New password")).toBeFocused();

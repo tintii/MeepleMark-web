@@ -74,6 +74,10 @@ integration("owner-scoped synchronization", () => {
     expect(await applyMutation(pool, ownerA, contextA, request)).toEqual(first);
     await expect(applyMutation(pool, ownerA, contextA, { ...request, document: player(id, "Changed") as unknown as Record<string, unknown> })).rejects.toThrow("different content");
     expect((await pool.query("SELECT 1 FROM changes WHERE owner_id = $1 AND entity_id = $2", [ownerA, id])).rowCount).toBe(1);
+    await pool.query("UPDATE users SET role='readonly' WHERE id=$1", [ownerA]);
+    await expect(applyMutation(pool, ownerA, contextA, request)).rejects.toMatchObject({ code: "write_forbidden" });
+    await expect(adoptBatch(pool, ownerA, { context: contextA, sourceWorkspaceId: randomUUID(), items: [{ entityType: "game", sourceId: randomUUID(), sourceFingerprint: "c".repeat(64), document: game(randomUUID(), "Blocked") as unknown as Record<string, unknown> }] })).rejects.toMatchObject({ code: "write_forbidden" });
+    await pool.query("UPDATE users SET role='user' WHERE id=$1", [ownerA]);
   });
 
   it("rejects invalid documents and cross-owner references without partial writes", async () => {

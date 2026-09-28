@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
 import { apiJson, csrfToken } from "../account/api";
 import { useAccount } from "../account/accountState";
@@ -10,6 +10,10 @@ export function Account() {
   const { workspace, refresh, switchToGuest, logoutLocally } = useAccount();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [registration, setRegistration] = useState<{ enabled: boolean; defaultRole: "readonly" | "user" } | null>(null);
+  const [showRecovery, setShowRecovery] = useState(false);
+
+  useEffect(() => { if (workspace.kind === "guest") void apiJson<{ registration: { enabled: boolean; defaultRole: "readonly" | "user" } }>("/api/v1/meta").then((meta) => setRegistration(meta.registration)).catch(() => setRegistration(null)); }, [workspace.kind]);
 
   const submit = async (operation: () => Promise<unknown>, allowUnlock = false): Promise<void> => {
     setBusy(true);
@@ -26,6 +30,11 @@ export function Account() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     void submit(() => apiJson("/api/v1/auth/setup", { method: "POST", body: JSON.stringify({ code: data.get("code"), password: data.get("password") }) }), true);
+  };
+  const register = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    void submit(() => apiJson("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ username: data.get("username"), displayName: data.get("displayName") || undefined, password: data.get("password") }) }), true);
   };
   const changePassword = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,6 +69,15 @@ export function Account() {
       {error && <p className="form-error" role="alert">{error}</p>}
       {workspace.kind === "guest" ? (
         <>
+          <GroupedSection title="Create account">
+            {registration?.enabled ? <form onSubmit={register}>
+              <label className="field"><span className="field-label">Username</span><input name="username" autoComplete="username" minLength={3} maxLength={64} required /></label>
+              <label className="field"><span className="field-label">Display name <span className="field-hint">(optional)</span></span><input name="displayName" autoComplete="name" maxLength={128} /></label>
+              <label className="field"><span className="field-label">Password</span><input name="password" type="password" minLength={12} maxLength={1024} autoComplete="new-password" required /><span className="field-hint">Use at least 12 characters.</span></label>
+              <button disabled={busy || !navigator.onLine} type="submit">Create account</button>
+              {!navigator.onLine && <p className="type-caption">Connect to this server to create an account. Guest scoring remains available offline.</p>}
+            </form> : <p>Registration is currently closed. You can still sign in or continue as a guest.</p>}
+          </GroupedSection>
           <GroupedSection title="Sign in">
             <form onSubmit={login}>
               <label className="field"><span className="field-label">Username</span><input name="username" autoComplete="username" required /></label>
@@ -67,22 +85,25 @@ export function Account() {
               <button disabled={busy} type="submit">Sign in</button>
             </form>
           </GroupedSection>
-          <GroupedSection title="First-time setup or recovery">
-            <p className="type-caption">Enter the one-use code provided by this installation's operator. Guest records stay local until you choose to adopt them.</p>
-            <form onSubmit={setup}>
+          <GroupedSection title="Activation or password recovery">
+            <p className="type-caption">Email recovery is not available. Ask an administrator for a one-use code if you need to activate an operator-created account or reset your password.</p>
+            <button type="button" aria-expanded={showRecovery} onClick={() => setShowRecovery((value) => !value)}>{showRecovery ? "Hide code form" : "Use a recovery or activation code"}</button>
+            {showRecovery && <form onSubmit={setup}>
               <label className="field"><span className="field-label">Setup code</span><input name="code" autoComplete="one-time-code" required /></label>
               <label className="field"><span className="field-label">New password</span><input name="password" type="password" minLength={12} autoComplete="new-password" required /></label>
               <button disabled={busy} type="submit">Set password and sign in</button>
-            </form>
+            </form>}
           </GroupedSection>
           <p><button type="button" onClick={switchToGuest}>Continue as guest</button></p>
         </>
       ) : (
         <>
           <GroupedSection title="Workspace">
-            <dl className="account-facts"><div><dt>Account</dt><dd>{workspace.username}</dd></div><div><dt>Installation</dt><dd>{workspace.installationId}</dd></div></dl>
+            <dl className="account-facts"><div><dt>Account</dt><dd>{workspace.username}</dd></div><div><dt>Role</dt><dd>{workspace.role}</dd></div><div><dt>Installation</dt><dd>{workspace.installationId}</dd></div></dl>
+            {!workspace.capabilities.write && <p className="form-error" role="status">This account is read-only. You can browse downloaded records; pending edits remain held locally.</p>}
             <SyncStatusPanel action />
             <p><Link to="/conflicts">Review conflicts</Link></p>
+            {workspace.capabilities.admin && <p><Link className="button-link" to="/admin">Open administration</Link></p>}
           </GroupedSection>
           <AdoptionPanel account={{ ...workspace, kind: "account", origin: window.location.origin }} />
           <GroupedSection title="Change password">

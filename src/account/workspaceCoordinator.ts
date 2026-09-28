@@ -5,6 +5,9 @@ export interface RememberedAccount extends AccountWorkspace {
   recoveryEpoch: string;
   username: string;
   displayName: string;
+  role: "readonly" | "user" | "admin";
+  capabilities: { write: boolean; admin: boolean };
+  registration: { enabled: boolean; defaultRole: "readonly" | "user" };
 }
 
 const ACTIVE_KEY = "meeplemark:active-workspace";
@@ -29,7 +32,9 @@ function parseAccount(value: string | null): RememberedAccount | null {
   if (!value) return null;
   try {
     const parsed = JSON.parse(value) as RememberedAccount;
-    return parsed.kind === "account" && typeof parsed.accountId === "string" ? parsed : null;
+    if (parsed.kind !== "account" || typeof parsed.accountId !== "string") return null;
+    if (!parsed.capabilities || !parsed.role) return { ...parsed, role: "readonly", capabilities: { write: false, admin: false }, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
+    return { ...parsed, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
   } catch {
     return null;
   }
@@ -85,4 +90,3 @@ export function onWorkspaceMessage(listener: (message: { kind: "activate"; accou
   if (channel) channel.onmessage = (event) => listener(event.data);
   return () => { window.removeEventListener("meeplemark:workspace", local); channel?.close(); };
 }
-

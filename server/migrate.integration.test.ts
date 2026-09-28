@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Pool } from "pg";
@@ -17,10 +17,18 @@ integration("real PostgreSQL migrations", () => {
   afterAll(async () => pool?.end());
 
   it("creates a clean schema and repeats without reapplying", async () => {
-    expect(await runMigrations(pool)).toEqual(["001_initial.sql"]);
+    const initialOnly = await mkdtemp(path.join(tmpdir(), "meeplemark-initial-"));
+    await copyFile(path.resolve("server/migrations/001_initial.sql"), path.join(initialOnly, "001_initial.sql"));
+    expect(await runMigrations(pool, initialOnly)).toEqual(["001_initial.sql"]);
+    const existing = await pool.query<{ id: string }>("INSERT INTO users(username,display_name,password_hash) VALUES ('existing','Existing','hash') RETURNING id");
+    expect(await runMigrations(pool)).toEqual(["002_registration_admin.sql"]);
     expect(await runMigrations(pool)).toEqual([]);
     const tables = await pool.query<{ table_name: string }>("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
     expect(tables.rows.map((row) => row.table_name)).toContain("mutation_receipts");
+    expect(tables.rows.map((row) => row.table_name)).toContain("admin_audit_events");
+    expect((await pool.query("SELECT role FROM users WHERE id=$1", [existing.rows[0].id])).rows[0].role).toBe("user");
+    expect((await pool.query("SELECT registration_enabled,registration_default_role FROM installation")).rows[0]).toEqual({ registration_enabled: false, registration_default_role: "user" });
+    await expect(pool.query("UPDATE users SET role='owner' WHERE id=$1", [existing.rows[0].id])).rejects.toMatchObject({ code: "23514" });
   });
 
   it("rolls back a failed migration without recording it", async () => {

@@ -7,7 +7,7 @@ Implementation is now specified in
 [self-hosted-accounts-and-sync](../openspec/changes/self-hosted-accounts-and-sync/proposal.md),
 with a [technical design](../openspec/changes/self-hosted-accounts-and-sync/design.md)
 and [ordered tasks](../openspec/changes/self-hosted-accounts-and-sync/tasks.md).
-The implementation uses operator-created local accounts, retains guest scoring,
+The implementation uses installation-local accounts with operator-controlled public registration, retains guest scoring,
 uses Fastify/PostgreSQL, exposes visible revision conflicts, and ships a
 Docker/Compose deployment. All initial games remain user-scoped; a shared
 catalogue is deferred.
@@ -64,8 +64,9 @@ If canonical game metadata is shared, collection membership and user-authored sh
 ## Offline synchronization and local-data migration
 
 The implementation retains local-first entry with account-backed synchronization.
-Guest use remains the no-setup path; account workspaces are optional and require
-operator provisioning.
+Guest use remains the no-setup path; account workspaces are optional. The first
+administrator requires operator bootstrap, after which normal accounts can use
+public registration when an administrator opens it.
 
 Implemented synchronization guarantees include:
 
@@ -107,15 +108,16 @@ and upgrade windows.
 
 ## Current boundaries and follow-up work
 
-The implemented first release deliberately excludes public registration, email
-recovery, OIDC, shared catalogues, groups, live multi-user scoring, native iOS
+The implementation includes public username/password registration controlled by
+an administrator. It deliberately excludes email recovery, OIDC, shared
+catalogues, groups, live multi-user scoring, native iOS
 sync, cross-installation sync, federation, and general import/export. Successful
 mutation receipts, change metadata, and tombstones are retained for the life of
 an account; cleanup needs a future cursor-expiry design. The initial server also
 serializes mutations per user, which is appropriate for personal scoring but is
 not a high-throughput collaboration design.
 
-Operator provisioning/recovery, guest continuity, record-level conflict choices,
+Operator bootstrap/assisted recovery, guest continuity, record-level conflict choices,
 confirmed account deletion, and restore-epoch handling are settled for this
 scope. Ingress/domain configuration and backup retention remain installation
 policy. Native retirement remains undecided.

@@ -6,6 +6,7 @@ import type { ServerConfig } from "./config";
 import { adoptionRequestSchema, type Mutation } from "./protocol";
 import { applyMutation, assertSyncContext } from "./sync";
 import type { EntityType } from "../src/shared/documents";
+import { requireWriteAccess } from "./permissions";
 
 const TABLES: Record<EntityType, string> = { game: "user_games", player: "players", play: "plays" };
 interface AdoptionResult { sourceId: string; status: "adopted" | "changed"; targetId: string; revision?: number }
@@ -22,7 +23,7 @@ function isUuid(value: string): boolean { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8]
 
 export async function adoptBatch(pool: Pool, ownerId: string, request: ReturnType<typeof adoptionRequestSchema.parse>) {
   const check = await pool.connect();
-  try { await assertSyncContext(check, request.context, ownerId); } finally { check.release(); }
+  try { await requireWriteAccess(check, ownerId); await assertSyncContext(check, request.context, ownerId); } finally { check.release(); }
   const results: AdoptionResult[] = [];
   for (const item of request.items) {
     const prior = await pool.query<{ source_fingerprint: Buffer; target_id: string; result: AdoptionResult }>(

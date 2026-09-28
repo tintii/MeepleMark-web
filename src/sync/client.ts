@@ -3,7 +3,7 @@ import { csrfToken } from "../account/api";
 import { isCurrentGeneration, workspaceGeneration, type RememberedAccount } from "../account/workspaceCoordinator";
 import { openWorkspaceDb, type OutboxEntry } from "../storage/scopedDb";
 
-export type SyncStatus = "idle" | "pending" | "syncing" | "synced" | "conflicted" | "reauthenticate" | "offline" | "recovery" | "error";
+export type SyncStatus = "idle" | "pending" | "syncing" | "synced" | "conflicted" | "reauthenticate" | "offline" | "recovery" | "readonly" | "error";
 export interface FrozenMutation { context: object; mutation: { mutationId: string; entityType: string; entityId: string; baseRevision: number; operation: string; document?: Record<string, unknown> }; generation: number }
 interface ChangeItem { sequence: number; entityType: "game" | "player" | "play"; entityId: string; revision: number; deleted: boolean; document: Record<string, unknown> | null }
 interface ChangePage { items: ChangeItem[]; cursor: number; highWater: number; initialSyncComplete: boolean }
@@ -87,6 +87,7 @@ async function saveConflict(db: IDBPDatabase, entry: OutboxEntry, details: unkno
 export async function uploadPending(account: RememberedAccount, fetcher: typeof fetch = fetch): Promise<void> {
   const db = await openWorkspaceDb(account);
   const entries = await db.getAll("outbox") as OutboxEntry[];
+  if (!account.capabilities.write) { if (entries.length) setSyncStatus("readonly"); return; }
   for (const original of entries) {
     if (original.state === "conflict") continue;
     const frozen = await freezeMutation(db, original.key, account);
@@ -97,6 +98,16 @@ export async function uploadPending(account: RememberedAccount, fetcher: typeof 
     const response = await fetcher("/api/v1/sync/mutations", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify({ context: frozen.context, mutation: frozen.mutation }) });
     if (!isCurrentGeneration(generation)) return;
     if (response.status === 401) { setSyncStatus("reauthenticate"); return; }
+    if (response.status === 403) {
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (body.error === "write_forbidden") {
+        const current = await db.get("outbox", original.key) as OutboxEntry | undefined;
+        if (current) await db.put("outbox", { ...current, state: "pending", mutationId: null, payload: null, inFlightGeneration: undefined });
+        setSyncStatus("readonly");
+        if (typeof window !== "undefined") window.dispatchEvent(new Event("meeplemark:permission-denied"));
+        return;
+      }
+    }
     if (response.status === 409) {
       const body = await response.json();
       if (["installation_mismatch", "recovery_epoch_mismatch", "protocol_mismatch"].includes(body.error)) setSyncStatus("recovery");
@@ -126,16 +137,29 @@ export async function downloadChanges(account: RememberedAccount, fetcher: typeo
 }
 
 let activeRun: Promise<void> | null = null;
+async function confirmCapabilities(account: RememberedAccount): Promise<boolean> {
+  const response = await fetch("/api/v1/auth/session", { credentials: "same-origin", cache: "no-store" });
+  if (response.status === 401) { setSyncStatus("reauthenticate"); return false; }
+  if (!response.ok) throw new Error(`Permission refresh failed (${response.status})`);
+  const session = await response.json() as { role: RememberedAccount["role"]; capabilities: RememberedAccount["capabilities"] };
+  if (session.role !== account.role || session.capabilities.write !== account.capabilities.write || session.capabilities.admin !== account.capabilities.admin) {
+    window.dispatchEvent(new Event("meeplemark:permission-denied"));
+    return false;
+  }
+  return session.capabilities.write;
+}
+
 export function syncNow(account: RememberedAccount): Promise<void> {
   if (activeRun) return activeRun;
   activeRun = (async () => {
     setSyncStatus("syncing");
     try {
-      await uploadPending(account);
+      const canUpload = await confirmCapabilities(account);
+      if (canUpload) await uploadPending(account);
       await downloadChanges(account);
-      if (currentStatus === "reauthenticate" || currentStatus === "recovery" || currentStatus === "conflicted") return;
+      if (currentStatus === "reauthenticate" || currentStatus === "recovery" || currentStatus === "conflicted" || currentStatus === "readonly") return;
       const outbox = await (await openWorkspaceDb(account)).getAll("outbox") as OutboxEntry[];
-      setSyncStatus(outbox.some((entry) => entry.state === "conflict") ? "conflicted" : outbox.length > 0 ? "pending" : "synced");
+      setSyncStatus(!account.capabilities.write && outbox.length > 0 ? "readonly" : outbox.some((entry) => entry.state === "conflict") ? "conflicted" : outbox.length > 0 ? "pending" : "synced");
     }
     catch { setSyncStatus(typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error"); }
     finally { activeRun = null; }

@@ -7,9 +7,9 @@ PostgreSQL 17 container on a single Compose host, behind an operator-managed
 same-origin HTTPS proxy. The application container runs as a non-root user; the
 database has no public port; migrations run as a separate one-shot service.
 
-This release does not provide public registration, email recovery, OIDC,
-multi-host orchestration, bundled TLS/DNS, monitoring, or an off-host backup
-target. Accounts are installation-local and created by the operator. Guest mode
+This release provides operator-controlled public username/password registration,
+but not email recovery, OIDC, multi-host orchestration, bundled TLS/DNS,
+monitoring, or an off-host backup target. Accounts are installation-local. Guest mode
 continues to work without the server. Browser caches are not encrypted from a
 person controlling that browser profile, offline clients learn about remote
 revocation only after reconnecting, and only server-acknowledged data is covered
@@ -28,12 +28,21 @@ mkdir -p secrets
 docker compose build
 docker compose run --rm migrate
 docker compose up -d app
-docker compose exec app node dist-server/cli.js account create alice "Alice"
+docker compose exec app node dist-server/cli.js account create admin "Administrator"
 ```
 
-Give the displayed one-use setup code to Alice through a protected channel. It
-expires after 24 hours and is never stored in plaintext. Use
-`account recovery alice` to invalidate older codes and issue a replacement.
+Redeem the displayed one-use setup code at `/account`, then explicitly promote
+the initialized, enabled account and sign in again or refresh:
+
+```bash
+docker compose exec app node dist-server/cli.js account role admin admin
+```
+
+Open `/admin` to choose the `user` or `readonly` signup default and deliberately
+open registration. Registration begins closed on fresh installs and upgrades;
+the first registrant is never promoted automatically. Use `account recovery
+admin` to invalidate older codes and issue a replacement. Codes expire after 24
+hours and are never stored in plaintext.
 The database has no published host port. The application binds to loopback by
 default; adapt `docs/Caddyfile.example` for the public hostname and TLS.
 
@@ -57,6 +66,14 @@ migration is transactionally rolled back and prevents the new app from becoming
 ready. Inspect its output, retain the database, and either fix forward or run an
 older image only when its documented schema is compatible. Otherwise restore a
 backup into a separate Compose project.
+
+Migration `002_registration_admin.sql` preserves existing account IDs,
+credentials, setup codes, ownership, and browser partition identity; existing
+accounts become `user`, none is promoted, and registration remains closed. Do
+not run an older server that lacks role enforcement against the upgraded
+database. Roll back only to an authorization-compatible build, or stop traffic
+and restore the matching pre-upgrade database backup, acknowledging any newer
+data that the restore discards.
 
 ## Backup and restore
 
@@ -85,6 +102,9 @@ users to the restored installation.
 
 ```bash
 docker compose exec app node dist-server/cli.js account recovery alice
+docker compose exec app node dist-server/cli.js account role alice readonly
+docker compose exec app node dist-server/cli.js account role alice user
+docker compose exec app node dist-server/cli.js account role alice admin
 docker compose exec app node dist-server/cli.js account disable alice
 docker compose exec app node dist-server/cli.js account enable alice
 docker compose exec app node dist-server/cli.js account revoke alice
@@ -93,7 +113,9 @@ docker compose exec app node dist-server/cli.js account delete alice --confirm a
 
 Deletion cascades through that account's server records and requires exact
 confirmation. It cannot erase offline copies on browsers, and protected backups
-retain data until their operator-defined expiry.
+retain data until their operator-defined expiry. The CLI and dashboard prevent
+demoting, disabling, or deleting the last enabled administrator with an
+initialized password.
 
 ## Readiness and troubleshooting
 

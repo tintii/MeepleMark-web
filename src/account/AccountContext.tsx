@@ -4,8 +4,8 @@ import { apiJson } from "./api";
 import { AccountContext, type WorkspaceState } from "./accountState";
 import { activateWorkspace, lockWorkspace, lockedAccount, onWorkspaceMessage, rememberedAccount, type RememberedAccount } from "./workspaceCoordinator";
 
-interface AccountIdentity { accountId: string; username: string; displayName: string }
-interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string }
+interface AccountIdentity { accountId: string; username: string; displayName: string; role: "readonly" | "user" | "admin"; capabilities: { write: boolean; admin: boolean } }
+interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<WorkspaceState>({ kind: "loading" });
@@ -47,6 +47,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
+  }, [refresh]);
+  useEffect(() => {
+    const update = () => void refresh();
+    window.addEventListener("focus", update);
+    window.addEventListener("online", update);
+    window.addEventListener("meeplemark:permission-denied", update);
+    return () => { window.removeEventListener("focus", update); window.removeEventListener("online", update); window.removeEventListener("meeplemark:permission-denied", update); };
   }, [refresh]);
   useEffect(() => onWorkspaceMessage((message) => {
     if (message.kind === "lock") switchToGuest();

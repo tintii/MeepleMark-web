@@ -1,6 +1,10 @@
 import type { IDBPDatabase } from "idb";
 import { openWorkspaceDb, putScopedRecord, type WorkspaceScope } from "../storage/scopedDb";
 
+function requireConflictWrite(scope: WorkspaceScope): void {
+  if (scope.kind === "account" && scope.capabilities?.write !== true) throw new Error("This account is read-only. The pending edit is still held on this device.");
+}
+
 export interface ConflictRecord {
   key: string; entityType: "game" | "player" | "play"; entityId: string;
   localDocument: Record<string, unknown> | null; baseRevision: number;
@@ -29,6 +33,7 @@ export async function useServerVersion(db: IDBPDatabase, conflict: ConflictRecor
 }
 
 export async function keepLocalVersion(scope: WorkspaceScope, conflict: ConflictRecord): Promise<string> {
+  requireConflictWrite(scope);
   const db = await openWorkspaceDb(scope);
   if (conflict.server.deleted && conflict.localDocument) {
     const copyId = crypto.randomUUID();
@@ -47,4 +52,3 @@ export async function keepLocalVersion(scope: WorkspaceScope, conflict: Conflict
   await tx.done;
   return conflict.entityId;
 }
-

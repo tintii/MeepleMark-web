@@ -49,6 +49,7 @@ export default defineConfig({
           /^\/players(?:\?.*)?$/,
           /^\/account(?:\?.*)?$/,
           /^\/conflicts(?:\/[^/?]+)?(?:\?.*)?$/,
+          /^\/admin(?:\?.*)?$/,
         ],
         cleanupOutdatedCaches: true,
         clientsClaim: false,

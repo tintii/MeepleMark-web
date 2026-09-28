@@ -2,7 +2,7 @@ import { openDB, type IDBPDatabase } from "idb";
 import type { EntityType } from "../shared/documents";
 
 export type GuestWorkspace = { kind: "guest" };
-export type AccountWorkspace = { kind: "account"; origin: string; installationId: string; accountId: string };
+export type AccountWorkspace = { kind: "account"; origin: string; installationId: string; accountId: string; capabilities?: { write: boolean; admin: boolean } };
 export type WorkspaceScope = GuestWorkspace | AccountWorkspace;
 export type EntityStore = "games" | "players" | "plays";
 
@@ -24,6 +24,14 @@ export interface OutboxEntry {
 const ACCOUNT_STORES = ["serverShadows", "outbox", "conflicts", "syncMeta", "adoptionMappings"] as const;
 const connections = new Map<string, Promise<IDBPDatabase>>();
 let activeScope: WorkspaceScope = { kind: "guest" };
+
+export class ReadOnlyWorkspaceError extends Error {
+  constructor() { super("This account is read-only. Your existing downloaded records remain available."); this.name = "ReadOnlyWorkspaceError"; }
+}
+
+function requireLocalWrite(scope: WorkspaceScope): void {
+  if (scope.kind === "account" && scope.capabilities?.write !== true) throw new ReadOnlyWorkspaceError();
+}
 
 function configuredGuestDatabaseName(): string {
   if (!import.meta.env.VITE_E2E || typeof window === "undefined") return "meeplemark";
@@ -86,6 +94,7 @@ export async function putScopedRecord(
   options: { failAfterEntityForTest?: boolean } = {},
 ): Promise<void> {
   const scope = activeScope;
+  requireLocalWrite(scope);
   const db = await openWorkspaceDb(scope);
   if (scope.kind === "guest") {
     await db.put(store, value);
@@ -123,6 +132,7 @@ export async function putScopedRecord(
 
 export async function deleteScopedRecord(store: EntityStore, entityId: string): Promise<void> {
   const scope = activeScope;
+  requireLocalWrite(scope);
   const db = await openWorkspaceDb(scope);
   if (scope.kind === "guest") {
     await db.delete(store, entityId);

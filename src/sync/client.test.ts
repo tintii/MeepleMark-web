@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { activateWorkspace, type RememberedAccount } from "../account/workspaceCoordinator";
 import { closeWorkspaceConnectionsForTests, openWorkspaceDb, putScopedRecord } from "../storage/scopedDb";
-import { acknowledgeMutation, applyChangePage, freezeMutation } from "./client";
+import { acknowledgeMutation, applyChangePage, freezeMutation, syncStatus, uploadPending } from "./client";
 import { keepLocalVersion, useServerVersion, type ConflictRecord } from "./conflicts";
 
-const account: RememberedAccount = { kind: "account", origin: "https://example.test", installationId: "11111111-1111-4111-8111-111111111111", recoveryEpoch: "22222222-2222-4222-8222-222222222222", accountId: "33333333-3333-4333-8333-333333333333", protocolVersion: 1, username: "a", displayName: "A" };
+const account: RememberedAccount = { kind: "account", origin: "https://example.test", installationId: "11111111-1111-4111-8111-111111111111", recoveryEpoch: "22222222-2222-4222-8222-222222222222", accountId: "33333333-3333-4333-8333-333333333333", protocolVersion: 1, username: "a", displayName: "A", role: "user", capabilities: { write: true, admin: false }, registration: { enabled: false, defaultRole: "user" } };
 beforeEach(async () => { await closeWorkspaceConnectionsForTests(); await activateWorkspace(account, false); });
 
 describe("browser synchronization transactions", () => {
@@ -48,5 +48,14 @@ describe("browser synchronization transactions", () => {
     const copyId = await keepLocalVersion(account, deleted);
     expect(copyId).not.toBe("copy");
     expect(await db.get("outbox", `player:${copyId}`)).toBeDefined();
+  });
+
+  it("preserves and pauses a pending edit when the server denies write permission", async () => {
+    await putScopedRecord("players", { id: "held", displayName: "Held", bggUsername: null, preferredColorIndex: null });
+    Object.defineProperty(globalThis, "document", { value: { cookie: "meeplemark_csrf=test-token" }, configurable: true });
+    await uploadPending(account, async () => new Response(JSON.stringify({ error: "write_forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } }));
+    const entry = await (await openWorkspaceDb(account)).get("outbox", "player:held");
+    expect(entry).toMatchObject({ state: "pending", mutationId: null, payload: null });
+    expect(syncStatus()).toBe("readonly");
   });
 });
