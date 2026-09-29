@@ -38,7 +38,7 @@ export function PlayList() {
 
   return (
     <div className="page">
-      <PageHeader title="Plays" actions={canWrite ? <Link className="button-link" to="/play/new">Add Play</Link> : undefined} />
+      <PageHeader title="Plays" actions={canWrite ? <Link className="button-link mobile-add-action" to="/play/new">Add Play</Link> : undefined} />
 
       {rows === null && <p className="type-caption">Loading…</p>}
       {rows !== null && rows.length === 0 && (

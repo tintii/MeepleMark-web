@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPlayer, deletePlayer, listPlayers, updatePlayer, type PlayerRecord } from "../storage/db";
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
@@ -23,6 +23,7 @@ export function Players() {
   const [editForm, setEditForm] = useState<PlayerForm>(emptyForm);
   const [deleting, setDeleting] = useState<PlayerRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const displayNameInput = useRef<HTMLInputElement>(null);
 
   async function reload(cancelled?: { value: boolean }) {
     const all = await listPlayers();
@@ -80,22 +81,32 @@ export function Players() {
 
   function colorSelect(value: number | null, onChange: (value: number | null) => void) {
     return (
-      <select value={value ?? ""} onChange={(event) => onChange(event.target.value === "" ? null : Number(event.target.value))}>
-        <option value="">Automatic</option>
-        {COLOR_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
-      </select>
+      <div className="colour-picker" role="group" aria-label="Preferred colour">
+        <button type="button" className="colour-choice" aria-label="Automatic colour" aria-pressed={value === null} onClick={() => onChange(null)}>
+          <span className="player-colour-swatch is-automatic" aria-hidden="true" />
+        </button>
+        {COLOR_NAMES.map((name, index) => (
+          <button key={name} type="button" className="colour-choice" aria-label={name} aria-pressed={value === index} onClick={() => onChange(index)}>
+            <span className="player-colour-swatch" style={{ background: `var(--color-player-${index + 1}-fill)` }} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
     );
   }
 
   return (
     <div className="page">
-      <PageHeader title="Players" subtitle="Local player details for faster setup. No network requests are made." />
+      <PageHeader
+        title="Players"
+        subtitle="Local player details for faster setup. No network requests are made."
+        actions={canWrite ? <button className="mobile-add-action mobile-only" type="button" aria-label="Go to add player form" onClick={() => displayNameInput.current?.focus()}>Add player</button> : undefined}
+      />
 
       {canWrite ? <GroupedSection title="Add player">
         <form onSubmit={handleAdd}>
-          <label className="field"><span className="field-label">Display name</span><input value={newPlayer.displayName} onChange={(event) => setNewPlayer((form) => ({ ...form, displayName: event.target.value }))} /></label>
+          <label className="field"><span className="field-label">Display name</span><input ref={displayNameInput} value={newPlayer.displayName} onChange={(event) => setNewPlayer((form) => ({ ...form, displayName: event.target.value }))} /></label>
           <label className="field"><span className="field-label">BGG username <span className="field-hint">(optional, stored locally)</span></span><input value={newPlayer.bggUsername} onChange={(event) => setNewPlayer((form) => ({ ...form, bggUsername: event.target.value }))} /></label>
-          <label className="field"><span className="field-label">Preferred colour</span>{colorSelect(newPlayer.preferredColorIndex, (preferredColorIndex) => setNewPlayer((form) => ({ ...form, preferredColorIndex })))}</label>
+          <div className="field"><span className="field-label">Preferred colour</span>{colorSelect(newPlayer.preferredColorIndex, (preferredColorIndex) => setNewPlayer((form) => ({ ...form, preferredColorIndex })))}</div>
           <button type="submit">Add player</button>
         </form>
       </GroupedSection> : <p className="type-caption">This account is read-only. Saved players are available to browse.</p>}
@@ -111,7 +122,7 @@ export function Players() {
                 <form onSubmit={saveEdit} className="edit-player-form">
                   <label className="field"><span className="field-label">Display name</span><input value={editForm.displayName} onChange={(event) => setEditForm((form) => ({ ...form, displayName: event.target.value }))} /></label>
                   <label className="field"><span className="field-label">BGG username</span><input value={editForm.bggUsername} onChange={(event) => setEditForm((form) => ({ ...form, bggUsername: event.target.value }))} /></label>
-                  <label className="field"><span className="field-label">Preferred colour</span>{colorSelect(editForm.preferredColorIndex, (preferredColorIndex) => setEditForm((form) => ({ ...form, preferredColorIndex })))}</label>
+                  <div className="field"><span className="field-label">Preferred colour</span>{colorSelect(editForm.preferredColorIndex, (preferredColorIndex) => setEditForm((form) => ({ ...form, preferredColorIndex })))}</div>
                   <div className="action-row"><button type="submit">Save changes</button><button type="button" onClick={() => setEditingId(null)}>Cancel</button><button type="button" className="destructive-button" onClick={() => setDeleting(player)}>Delete player</button></div>
                 </form>
               ) : (

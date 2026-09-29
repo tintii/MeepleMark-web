@@ -14,6 +14,33 @@ const routes = [
   "/conflicts",
 ];
 
+test("phone navigation and add actions stay within thumb reach", async ({ page }, testInfo) => {
+  await page.setViewportSize(viewports.phone390);
+  await openIsolatedApp(page, testInfo);
+
+  const nav = page.getByRole("navigation", { name: "Primary navigation" });
+  const navBox = await nav.boundingBox();
+  const addBox = await page.getByRole("link", { name: "Add Play" }).boundingBox();
+  expect(navBox).not.toBeNull();
+  expect(addBox).not.toBeNull();
+  expect(Math.abs((navBox?.y ?? 0) + (navBox?.height ?? 0) - viewports.phone390.height)).toBeLessThan(1);
+  expect((addBox?.y ?? 0) + (addBox?.height ?? 0)).toBeLessThan(navBox?.y ?? 0);
+  await expect(nav.getByRole("link", { name: "Plays" }).locator("span[aria-hidden]"))
+    .toHaveCSS("background-color", "rgb(235, 207, 106)");
+  await expect(nav.getByRole("link", { name: "Collection" }).locator("span[aria-hidden]"))
+    .toHaveCSS("background-color", "rgb(143, 211, 165)");
+  await expect(nav.getByRole("link", { name: "Players" }).locator("span[aria-hidden]"))
+    .toHaveCSS("background-color", "rgb(143, 176, 232)");
+
+  await nav.getByRole("link", { name: "Collection" }).click();
+  await page.getByRole("button", { name: "Go to add game form" }).click();
+  await expect(page.getByLabel("Game name")).toBeFocused();
+
+  await nav.getByRole("link", { name: "Players" }).click();
+  await page.getByRole("button", { name: "Go to add player form" }).click();
+  await expect(page.getByLabel("Display name")).toBeFocused();
+});
+
 test("every route stays within the page viewport at the required widths", async ({ page }, testInfo) => {
   const database = await openIsolatedApp(page, testInfo);
   await seedExistingFixture(page);

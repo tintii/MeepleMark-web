@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { addToCollection, findOrCreateGame, listGames, type GameRecord } from "../storage/db";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
@@ -11,6 +11,7 @@ export function Collection() {
   const [games, setGames] = useState<GameRecord[] | null>(null);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
 
   async function reload(cancelled?: { value: boolean }) {
     const all = await listGames();
@@ -46,13 +47,17 @@ export function Collection() {
 
   return (
     <div className="page">
-      <PageHeader title="Collection" subtitle="Games you own, whether played yet or not." />
+      <PageHeader
+        title="Collection"
+        subtitle="Games you own, whether played yet or not."
+        actions={canWrite ? <button className="mobile-add-action mobile-only" type="button" aria-label="Go to add game form" onClick={() => nameInput.current?.focus()}>Add game</button> : undefined}
+      />
 
       {canWrite ? <GroupedSection title="Add a game">
         <form onSubmit={handleAdd} className="inline-form">
           <label className="field">
             <span className="field-label">Game name</span>
-            <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" />
+            <input ref={nameInput} value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" />
           </label>
           {error && <p role="alert" className="form-error">{error}</p>}
           <button type="submit">Add to collection</button>
