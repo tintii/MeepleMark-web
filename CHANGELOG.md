@@ -9,6 +9,8 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - Import and export individual game score sheets as JSON.
 - A concise user manual, including the score-sheet JSON format.
 - A development guide covering setup, checks, and the repository layout.
+- Screenshots of play history and responsive scorekeeping layouts in the
+  project documentation.
 
 ### Changed
 

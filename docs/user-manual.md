@@ -10,6 +10,11 @@ in this browser. The main areas are:
 - **Players** — save frequently used player names and optional metadata.
 - **Account** — sign in, synchronize, and review synchronization status.
 
+<p>
+  <img src="images/play-history.png" alt="The Plays screen on desktop" width="720">
+  <img src="images/play-history-mobile.png" alt="The Plays screen on mobile" width="168">
+</p>
+
 ## Recording a play
 
 1. Select **Add Play**.
@@ -22,6 +27,20 @@ Drafts remain editable. Ranked games calculate ranks automatically, including
 ties. Win/loss games show an explicit outcome for each player. In a category
 score sheet, totals update as values are entered; typing a total manually makes
 it an override until **Recompute** is selected.
+
+### Phone scorepad
+
+On phones, **Single player** keeps one player's categories and controls within
+easy reach. Use **Previous** and **Next** to move between players.
+
+![A category score sheet in the phone single-player layout](images/mobile-scorepad.png)
+
+### Desktop scorepad
+
+On wider screens, **Grid** shows every player and category together. The layout
+can be changed at any time without losing partially entered scores.
+
+![A category score sheet in the desktop grid layout and dark theme](images/desktop-scorepad-dark.png)
 
 ## Games and score sheets
 
