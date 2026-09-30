@@ -3,8 +3,15 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Served from "/" by default (dev server, Docker). The GitHub Pages demo sets
+// VITE_BASE=/MeepleMark-web/ because a project site lives under a sub-path.
+const base = (process.env.VITE_BASE ?? '/').replace(/\/?$/, '/')
+const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const underBase = (pattern: string) => new RegExp(`^${escapedBase}${pattern}`)
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:8787',
@@ -34,22 +41,23 @@ export default defineConfig({
         theme_color: '#fafafa',
         background_color: '#fafafa',
         display: 'standalone',
-        start_url: '/',
+        start_url: base,
+        scope: base,
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: `${base}favicon.svg`, sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,json}'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
         navigateFallbackAllowlist: [
-          /^\/(?:\?.*)?$/,
-          /^\/play\/(?:new|[^/?]+)(?:\?.*)?$/,
-          /^\/collection(?:\/[^/?]+(?:\/template)?)?(?:\?.*)?$/,
-          /^\/players(?:\?.*)?$/,
-          /^\/account(?:\?.*)?$/,
-          /^\/conflicts(?:\/[^/?]+)?(?:\?.*)?$/,
-          /^\/admin(?:\?.*)?$/,
+          underBase('(?:\\?.*)?$'),
+          underBase('play\\/(?:new|[^/?]+)(?:\\?.*)?$'),
+          underBase('collection(?:\\/[^/?]+(?:\\/template)?)?(?:\\?.*)?$'),
+          underBase('players(?:\\?.*)?$'),
+          underBase('account(?:\\?.*)?$'),
+          underBase('conflicts(?:\\/[^/?]+)?(?:\\?.*)?$'),
+          underBase('admin(?:\\?.*)?$'),
         ],
         cleanupOutdatedCaches: true,
         clientsClaim: false,

@@ -30,7 +30,7 @@ function NavShell() {
       <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="app-chrome-inner">
         <NavLink className="product-name" to="/" aria-label={`${PRODUCT_NAME} home`}>
-          <img src="/favicon.svg" alt="" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" />
           <span>Meeple<span className="product-name-accent">Mark</span></span>
         </NavLink>
         <nav className="nav-shell" aria-label="Primary navigation">
@@ -86,7 +86,7 @@ function RoutedApp() {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
       <AccountProvider>
         <RoutedApp />
       </AccountProvider>

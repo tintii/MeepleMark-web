@@ -6,6 +6,10 @@ without requiring an account or a network connection.
 
 This is an LLM-assisted project.
 
+**[Try the live demo](https://tintii.github.io/MeepleMark-web/)** — guest mode
+only. Scores are stored in your own browser; the demo has no accounts, sync, or
+database.
+
 <p>
   <div>Desktop view:</div>
   <img src="docs/images/play-history.png" alt="MeepleMark play history on desktop" width="720"> 
