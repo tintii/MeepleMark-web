@@ -62,8 +62,9 @@ function NavShell() {
             rel="noreferrer"
             aria-label="MeepleMark on GitHub (opens in a new tab)"
           >
-            <span className="github-link-icon" aria-hidden="true">GH</span>
-            <span className="github-link-label">GitHub</span>
+            <svg className="github-link-icon" aria-hidden="true" viewBox="0 0 19 19">
+              <use href={`${import.meta.env.BASE_URL}icons.svg#github-icon`} />
+            </svg>
           </a>
           <NavLink className="app-chrome-link" to="/account" aria-label="Account and workspace"><span aria-live="polite">{workspace.kind === "account" ? workspace.displayName : workspace.kind === "loading" ? "…" : "Guest"}</span></NavLink>
           <ThemeToggle />

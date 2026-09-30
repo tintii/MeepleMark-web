@@ -56,6 +56,33 @@ PostgreSQL integration tests require the integration database:
 npm run test:integration
 ```
 
+## Repository development workflow
+
+Codex discovers the repo-local `meeplemark-development` skill under
+`.codex/skills/`. Development work uses its bundled Ponytail rules to prefer the
+smallest correct change and uses OpenSpec to propose, implement, and archive
+planned changes. Start by checking active work with:
+
+```bash
+openspec list --json
+```
+
+The skill also provides a repeatable setup helper. Guest mode installs locked
+dependencies; account mode additionally starts and migrates the disposable
+integration database:
+
+```bash
+.codex/skills/meeplemark-development/scripts/setup-local.sh guest
+.codex/skills/meeplemark-development/scripts/setup-local.sh account
+```
+
+Every completed repository change belongs under `[Unreleased]` in
+`CHANGELOG.md`. Review documentation impact at the same time: update the user
+manual for product behavior, this guide for development workflow, the
+self-hosting guide for deployment and operations, and the persistence document
+for architecture. Keep the root README limited to the product overview,
+essential guest quick start, and links to these canonical documents.
+
 ## Repository map
 
 | Path | Purpose |
@@ -67,6 +94,7 @@ npm run test:integration
 | `golden/` | Cross-platform scoring fixtures |
 | `docs/` | User, development, architecture, and deployment guides |
 | `openspec/` | Feature proposals, specifications, designs, and task records |
+| `.codex/skills/` | Repo-local Codex, Ponytail, OpenSpec, and setup workflows |
 
 The scoring engine keeps decimals exact and serializes score values as strings.
 Stored plays embed score-sheet snapshots so later edits cannot change history.

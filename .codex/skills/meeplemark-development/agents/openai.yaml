@@ -1,0 +1,4 @@
+interface:
+  display_name: "MeepleMark Development"
+  short_description: "Develop MeepleMark with Ponytail and OpenSpec"
+  default_prompt: "Use $meeplemark-development to implement this repository change with Ponytail, OpenSpec, local verification, and a changelog entry."

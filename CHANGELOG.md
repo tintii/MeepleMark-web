@@ -16,6 +16,9 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - An iPhone Safari prompt with instructions for adding MeepleMark to the Home
   Screen when it is not already installed.
 - A header link to the MeepleMark source repository on GitHub.
+- A repo-local Codex development workflow combining Ponytail, OpenSpec,
+  changelog and documentation maintenance, verification guidance, and
+  repeatable local setup.
 
 ### Changed
 
@@ -26,6 +29,8 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - Replaced the floating offline-ready badge with a compact header indicator and
   details popover.
 - Improved mobile navigation and add-button spacing around device safe areas.
+- Kept the root README focused on the product and quick start, with contributor
+  workflow and roadmap details in dedicated documentation.
 - Consolidated project, development, deployment, and verification documentation
   and archived completed OpenSpec changes.
 
