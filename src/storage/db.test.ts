@@ -28,6 +28,8 @@ import {
   writePlay,
 } from "./db";
 import { getDb } from "./db";
+import { parseScoreSheet } from "../draft/scoreSheetPortability";
+import { setActiveWorkspace, workspaceDatabaseName } from "./scopedDb";
 
 beforeEach(async () => {
   await resetDbConnectionForTests();
@@ -92,6 +94,49 @@ describe("games", () => {
     await setTemplate(game.id, ["Points", "Bonus"], "high", "ranked");
     const v2 = await getGame(game.id);
     expect(v2?.templateVersion).toBe(2);
+  });
+
+  it("setTemplate keeps destination identity and version authoritative for imported content", async () => {
+    const game = await createGame({ name: "Destination", origin: "custom" });
+    await setTemplate(game.id, ["Old"], "high", "ranked");
+    await setTemplate(game.id, ["Still old"], "high", "ranked");
+    const imported = parseScoreSheet(JSON.stringify({
+      slug: "local:source-game",
+      version: 9,
+      winDirection: "low",
+      defaultOutcome: "flagged",
+      categories: [{ key: "foreign-key", label: "Imported" }],
+    }));
+
+    await setTemplate(game.id, imported.categories.map((category) => category.label), imported.winDirection, imported.defaultOutcome);
+    const saved = await getGame(game.id);
+    expect(saved?.localTemplate).toMatchObject({ slug: `local:${game.id}`, version: 3, winDirection: "low", defaultOutcome: "flagged" });
+    expect(saved?.localTemplate?.categories).toEqual([{ key: "imported", label: "Imported" }]);
+
+    await setTemplate(game.id, imported.categories.map((category) => category.label), imported.winDirection, imported.defaultOutcome);
+    expect((await getGame(game.id))?.templateVersion).toBe(3);
+  });
+
+  it("saves imported content through an account workspace's normal outbox", async () => {
+    const account = { kind: "account" as const, origin: "https://example.test", installationId: "import-install", accountId: "import-account", capabilities: { write: true, admin: false } };
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(workspaceDatabaseName(account));
+      request.onsuccess = () => resolve(); request.onerror = () => reject(request.error);
+    });
+    setActiveWorkspace(account);
+    const game = await createGame({ name: "Account destination", origin: "custom" });
+    const db = await getDb();
+    await db.clear("outbox");
+    const imported = parseScoreSheet(JSON.stringify({
+      slug: "local:source", version: 8, winDirection: "high", defaultOutcome: "ranked",
+      categories: [{ key: "source-points", label: "Points" }],
+    }));
+
+    await setTemplate(game.id, imported.categories.map((category) => category.label), imported.winDirection, imported.defaultOutcome);
+
+    const mutation = await db.get("outbox", `game:${game.id}`);
+    expect(mutation.operation).toBe("put");
+    expect(mutation.document.localTemplate).toMatchObject({ slug: `local:${game.id}`, version: 1 });
   });
 
   it("deleteTemplate resets to null/0 without touching recorded plays", async () => {

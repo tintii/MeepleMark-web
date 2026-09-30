@@ -31,6 +31,12 @@ test("phone navigation and add actions stay within thumb reach", async ({ page }
     .toHaveCSS("background-color", "rgb(143, 211, 165)");
   await expect(nav.getByRole("link", { name: "Players" }).locator("span[aria-hidden]"))
     .toHaveCSS("background-color", "rgb(143, 176, 232)");
+  await expect(nav.locator('svg[data-icon="dice"]')).toBeVisible();
+  await expect(nav.locator('svg[data-icon="game-stack"]')).toBeVisible();
+  await expect(nav.locator('svg[data-icon="meeple"]')).toBeVisible();
+
+  const tabWidths = await nav.getByRole("link").evaluateAll((links) => links.map((link) => link.getBoundingClientRect().width));
+  expect(Math.max(...tabWidths) - Math.min(...tabWidths)).toBeLessThan(1);
 
   await nav.getByRole("link", { name: "Collection" }).click();
   await page.getByRole("button", { name: "Go to add game form" }).click();

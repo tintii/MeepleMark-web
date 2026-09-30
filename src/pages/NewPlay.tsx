@@ -30,6 +30,7 @@ export function NewPlay() {
   const [players, setPlayers] = useState<PlayerSuggestion[]>([]);
   const [matchedGame, setMatchedGame] = useState<GameRecord | undefined>();
   const [useTemplate, setUseTemplate] = useState(false);
+  const selectedTemplate = useTemplate ? matchedGame?.localTemplate : null;
 
   useEffect(() => {
     void gameSuggestions().then(setGames);
@@ -112,8 +113,8 @@ export function NewPlay() {
         </GroupedSection>
 
         <GroupedSection title="Rules">
-          <label className="field"><span className="field-label">Win direction</span><select value={winDirection} onChange={(event) => setWinDirection(event.target.value as WinDirection)} disabled={useTemplate}><option value="high">Highest score wins</option><option value="low">Lowest score wins</option></select></label>
-          <label className="field"><span className="field-label">Outcome</span><select value={outcome} onChange={(event) => setOutcome(event.target.value as OutcomeMode)} disabled={useTemplate}><option value="ranked">Ranked</option><option value="flagged">Win / loss</option></select></label>
+          <label className="field"><span className="field-label">Win direction</span><select value={selectedTemplate?.winDirection ?? winDirection} onChange={(event) => setWinDirection(event.target.value as WinDirection)} disabled={useTemplate}><option value="high">Highest score wins</option><option value="low">Lowest score wins</option></select></label>
+          <label className="field"><span className="field-label">Outcome</span><select value={selectedTemplate?.defaultOutcome ?? outcome} onChange={(event) => setOutcome(event.target.value as OutcomeMode)} disabled={useTemplate}><option value="ranked">Ranked</option><option value="flagged">Win / loss</option></select></label>
           {useTemplate && <p className="field-hint">The selected score sheet supplies these rules.</p>}
         </GroupedSection>
 

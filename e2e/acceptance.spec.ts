@@ -38,7 +38,7 @@ test("plain journey preserves identities, overrides, metadata, history, and dele
   await averyRow.getByRole("button", { name: "Edit" }).click();
   const editForm = page.locator(".edit-player-form");
   await editForm.getByLabel("BGG username").fill("");
-  await editForm.getByLabel("Preferred colour").selectOption("");
+  await editForm.getByRole("button", { name: "Automatic colour" }).click();
   await editForm.getByRole("button", { name: "Save changes" }).click();
   const blakeRow = page.getByRole("listitem").filter({ hasText: "Blake" });
   await blakeRow.getByRole("button", { name: "Edit" }).click();

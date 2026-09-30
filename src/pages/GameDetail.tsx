@@ -5,6 +5,7 @@ import { PlayRowItem } from "../components/PlayRowItem";
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
 import { useAccount } from "../account/accountState";
+import { scoreSheetFilename, serializeScoreSheet } from "../draft/scoreSheetPortability";
 
 /**
  * `/collection/:gameId` — a game, its plays, and the score-sheet /
@@ -75,6 +76,16 @@ export function GameDetail() {
     await reload();
   }
 
+  function handleExportScoreSheet() {
+    if (!currentGame.localTemplate) return;
+    const url = URL.createObjectURL(new Blob([serializeScoreSheet(currentGame.localTemplate)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = scoreSheetFilename(currentGame.name);
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="page">
       <PageHeader
@@ -96,7 +107,10 @@ export function GameDetail() {
           {game.localTemplate ? "Edit score sheet" : "Add a score sheet"}
         </Link>}
         {game.localTemplate && (
-          <p className="type-caption">{game.localTemplate.categories.map((c) => c.label).join(", ")}</p>
+          <>
+            <p className="type-caption">{game.localTemplate.categories.map((c) => c.label).join(", ")}</p>
+            <button type="button" onClick={handleExportScoreSheet}>Export score sheet</button>
+          </>
         )}
       </GroupedSection>
 

@@ -28,6 +28,7 @@ test("registration and administration reflow at phone and desktop widths with ke
     await page.setViewportSize(viewport);
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+    await expect(page.locator('a[href="/admin"]')).toHaveCount(1);
     await expect(page.getByText("Avery", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
@@ -58,7 +59,7 @@ test("open registration is usable at 375px and direct non-admin access is denied
     if (url.pathname === "/api/v1/meta") return route.fulfill({ contentType: "application/json", body: JSON.stringify(meta) });
     return route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ error: "admin_forbidden" }) });
   });
-  await page.goto("/admin"); await expect(page.getByText("An enabled administrator account is required.")).toBeVisible();
+  await page.goto("/admin"); await expect(page.getByText("An enabled administrator account is required.")).toBeVisible(); await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
 });
 
 test("real registration, demotion with held offline work, and restoration", async ({ browser }, testInfo) => {

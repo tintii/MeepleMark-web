@@ -7,7 +7,7 @@ PostgreSQL 17 container on a single Compose host, behind an operator-managed
 same-origin HTTPS proxy. The application container runs as a non-root user; the
 database has no public port; migrations run as a separate one-shot service.
 
-This release provides operator-controlled public username/password registration,
+MeepleMark provides operator-controlled public username/password registration,
 but not email recovery, OIDC, multi-host orchestration, bundled TLS/DNS,
 monitoring, or an off-host backup target. Accounts are installation-local. Guest mode
 continues to work without the server. Browser caches are not encrypted from a
@@ -67,13 +67,10 @@ ready. Inspect its output, retain the database, and either fix forward or run an
 older image only when its documented schema is compatible. Otherwise restore a
 backup into a separate Compose project.
 
-Migration `002_registration_admin.sql` preserves existing account IDs,
-credentials, setup codes, ownership, and browser partition identity; existing
-accounts become `user`, none is promoted, and registration remains closed. Do
-not run an older server that lacks role enforcement against the upgraded
-database. Roll back only to an authorization-compatible build, or stop traffic
-and restore the matching pre-upgrade database backup, acknowledging any newer
-data that the restore discards.
+Only run application builds that support the database's active schema. For a
+rollback across incompatible schemas, stop traffic and restore the matching
+database backup into a separate Compose project, acknowledging any newer data
+that the restore discards.
 
 ## Backup and restore
 
@@ -125,10 +122,11 @@ requires PostgreSQL and the compatible migration version. `/api/*` is always
 development runs `npm run dev:server` beside `npm run dev`, whose proxy keeps API
 traffic same-origin at `http://localhost:5173`.
 
-## Release verification record
+## Deployment verification
 
-The verification evidence and environment-specific gaps are maintained in
-[`accounts-sync-verification.md`](accounts-sync-verification.md). Repeat the
-real-PostgreSQL, account-browser, image, replacement, and restore checks on the
-actual release host; a successful local TypeScript/Vite build alone is not an
-image or recovery pass.
+Before serving traffic, confirm that the migration exits successfully, both
+health endpoints pass through the HTTPS proxy, PostgreSQL has no published
+port, account login works, and representative records survive an application
+container replacement. Test backup restoration and recovery-epoch rotation on
+the actual deployment infrastructure; a local TypeScript/Vite build is not an
+image or recovery check.

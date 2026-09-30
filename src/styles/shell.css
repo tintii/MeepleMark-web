@@ -89,14 +89,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; box-shadow: none; transfor
 
 label {
   display: block;
-  margin-bottom: var(--spacing-lg);
+  margin: 0 0 var(--spacing-lg);
 }
 
 fieldset {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  margin: 0 0 var(--spacing-lg);
   background: var(--color-surface-elevated);
 }
 
@@ -190,7 +190,6 @@ fieldset {
 .product-name-accent { color: var(--color-accent); }
 
 .app-chrome-actions { display: flex; align-items: center; gap: var(--spacing-md); }
-.workspace-indicator { font-size: var(--type-caption-size); color: var(--color-nav-muted); text-decoration: underline; text-underline-offset: 0.15em; }
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -222,7 +221,8 @@ fieldset {
   max-width: var(--content-wide-width);
 }
 
-.nav-shell a {
+.nav-shell a,
+.app-chrome-link {
   color: var(--color-nav-muted);
   text-decoration: none;
   font-size: var(--type-body-size);
@@ -233,7 +233,8 @@ fieldset {
 
 .nav-shell a span[aria-hidden] { display: none; }
 
-.nav-shell a.active {
+.nav-shell a.active,
+.app-chrome-link.active {
   color: var(--color-nav-foreground);
   background: color-mix(in srgb, var(--color-nav-foreground) 14%, transparent);
   font-weight: 700;
@@ -669,6 +670,10 @@ button[type="submit"]:active:not(:disabled),
 .field { display: grid; gap: var(--spacing-xs); margin-bottom: var(--spacing-lg); }
 .field-label { font-weight: 600; }
 .field-hint { color: var(--color-text-secondary); font-size: var(--type-caption-size); }
+.inline-field { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-md); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.score-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--spacing-sm); }
+.score-sheet-actions .destructive-button { margin-inline-start: auto; }
 .form-error { color: var(--color-destructive); font-weight: 600; }
 .checkbox-field { display: flex; align-items: center; gap: var(--spacing-sm); }
 .admin-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); }
@@ -691,23 +696,28 @@ button[type="submit"]:active:not(:disabled),
   main { padding-bottom: calc(var(--touch-target) + var(--spacing-xl) + env(safe-area-inset-bottom)); }
   .app-chrome { position: static; border-bottom: 0; backdrop-filter: none; }
   .app-chrome-inner { padding-block: var(--spacing-sm); }
-  .workspace-indicator { display: none; }
+  .app-chrome-link { display: none; }
   .theme-toggle { padding-inline: var(--spacing-sm); }
   .theme-toggle-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .nav-shell {
     position: fixed;
-    inset: auto 0 0 0;
+    inset: auto var(--spacing-sm) 0;
     z-index: 9;
-    justify-content: space-around;
-    gap: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-sm);
     padding: var(--spacing-xs) var(--spacing-sm) calc(var(--spacing-xs) + env(safe-area-inset-bottom));
-    border-top: 1px solid color-mix(in srgb, var(--color-nav-foreground) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-nav-foreground) 18%, transparent);
+    border-bottom: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     background: color-mix(in srgb, var(--color-nav-background) 96%, transparent);
     backdrop-filter: blur(var(--spacing-lg));
     box-shadow: 0 -3px 14px var(--color-shadow);
   }
-  .nav-shell a { min-width: var(--touch-target); min-height: var(--touch-target); display: grid; place-items: center; align-content: center; gap: var(--spacing-xxs); padding: var(--spacing-xxs) var(--spacing-sm); font-size: var(--type-caption-size); }
-  .nav-shell a span[aria-hidden] { display: grid; width: var(--spacing-xl); height: var(--spacing-xl); place-items: center; border-radius: var(--radius-pill); color: var(--color-player-3-foreground); background: var(--color-player-3-fill); box-shadow: inset 0 2px 0 var(--color-candy-highlight), 0 2px 4px var(--color-shadow); font-size: var(--type-caption-size); }
+  .nav-shell a { width: 100%; min-width: 0; min-height: var(--touch-target); display: grid; place-items: center; align-content: center; gap: var(--spacing-xxs); padding: var(--spacing-xxs) var(--spacing-sm); border: 1px solid transparent; border-radius: var(--radius-md); font-size: var(--type-caption-size); }
+  .nav-shell a.active { border-color: color-mix(in srgb, var(--color-nav-foreground) 42%, transparent); }
+  .nav-shell a span[aria-hidden] { display: grid; width: var(--spacing-xl); height: var(--spacing-xl); place-items: center; border-radius: var(--radius-sm); color: var(--color-player-3-foreground); background: var(--color-player-3-fill); box-shadow: inset 0 2px 0 var(--color-candy-highlight), 0 2px 4px var(--color-shadow); }
+  .nav-shell a span[aria-hidden] svg { width: var(--spacing-lg); height: var(--spacing-lg); }
   .nav-shell a:nth-child(2) span[aria-hidden] { background: var(--color-player-4-fill); color: var(--color-player-4-foreground); }
   .nav-shell a:nth-child(3) span[aria-hidden] { background: var(--color-player-6-fill); color: var(--color-player-6-foreground); }
   .page { padding: var(--spacing-lg) var(--spacing-md); }

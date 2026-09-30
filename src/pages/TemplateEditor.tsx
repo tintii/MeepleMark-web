@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { deleteTemplate, getGame, setTemplate, type GameRecord } from "../storage/db";
 import { TemplateValidation } from "../engine/validation";
 import { buildTemplateCandidate } from "../draft/templateCandidate";
 import type { OutcomeMode, WinDirection } from "../engine/models";
 import { PageHeader } from "../components/PageHeader";
+import { readScoreSheetFile } from "../draft/scoreSheetPortability";
 
 const CATEGORY_CAP = 10;
 
@@ -23,6 +24,7 @@ export function TemplateEditor() {
   const [defaultOutcome, setDefaultOutcome] = useState<OutcomeMode>("ranked");
   const [issues, setIssues] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const importInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!gameId) return;
@@ -110,9 +112,31 @@ export function TemplateEditor() {
     navigate(`/collection/${currentGame.id}`);
   }
 
+  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const imported = await readScoreSheetFile(file);
+      setLabels(imported.categories.map((category) => category.label));
+      setWinDirection(imported.winDirection);
+      setDefaultOutcome(imported.defaultOutcome);
+      setIssues([]);
+    } catch (error) {
+      setIssues([error instanceof Error ? error.message : "The score sheet file could not be imported."]);
+    } finally {
+      input.value = "";
+    }
+  }
+
   return (
     <div className="page">
       <PageHeader title={`Score sheet — ${game.name}`} parent={{ to: `/collection/${game.id}`, label: game.name }} />
+      <div className="field inline-field">
+        <span id="score-sheet-import-label" className="field-label">Import score sheet JSON</span>
+        <input ref={importInput} className="visually-hidden" type="file" accept=".json,application/json" aria-labelledby="score-sheet-import-label" onChange={handleImport} />
+        <button type="button" onClick={() => importInput.current?.click()}>Choose file</button>
+      </div>
       <form onSubmit={handleSave}>
         <fieldset>
           <legend>Categories</legend>
@@ -139,16 +163,16 @@ export function TemplateEditor() {
           <p className="type-caption">Up to {CATEGORY_CAP} categories.</p>
         </fieldset>
 
-        <label>
-          Win direction
+        <label className="field inline-field">
+          <span className="field-label">Win direction</span>
           <select value={winDirection} onChange={(e) => setWinDirection(e.target.value as WinDirection)}>
             <option value="high">High score wins</option>
             <option value="low">Low score wins</option>
           </select>
         </label>
 
-        <label>
-          Outcome
+        <label className="field inline-field">
+          <span className="field-label">Outcome</span>
           <select value={defaultOutcome} onChange={(e) => setDefaultOutcome(e.target.value as OutcomeMode)}>
             <option value="ranked">Ranked</option>
             <option value="flagged">Cooperative / solo (win or lose)</option>
@@ -163,16 +187,17 @@ export function TemplateEditor() {
           </ul>
         )}
 
-        <button type="submit" disabled={saving}>
-          Save
-        </button>
+        <div className="score-sheet-actions">
+          <button type="submit" disabled={saving}>
+            Save
+          </button>
+          {game.localTemplate != null && (
+            <button type="button" className="destructive-button" onClick={handleDelete}>
+              Delete score sheet
+            </button>
+          )}
+        </div>
       </form>
-
-      {game.localTemplate != null && (
-        <button type="button" className="destructive-button" onClick={handleDelete}>
-          Delete score sheet
-        </button>
-      )}
     </div>
   );
 }
