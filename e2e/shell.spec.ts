@@ -5,6 +5,10 @@ test("production preview opens with an independent database", async ({ page }, t
   await openIsolatedApp(page, testInfo);
   await expect(page.getByRole("heading", { name: "Plays" })).toBeVisible();
   await expect(page.getByText("No plays yet")).toBeVisible();
+  const repositoryLink = page.getByRole("link", { name: "MeepleMark on GitHub (opens in a new tab)" });
+  await expect(repositoryLink).toBeVisible();
+  await expect(repositoryLink).toHaveAttribute("href", "https://github.com/tintii/MeepleMark-web");
+  await expect(repositoryLink).toHaveAttribute("target", "_blank");
 });
 
 test("storage failure and delay controls are available", async ({ page }, testInfo) => {

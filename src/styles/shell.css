@@ -250,6 +250,26 @@ fieldset {
 }
 .ios-install-card p { margin: var(--spacing-xs) 0 0; color: var(--color-text-secondary); }
 .ios-install.is-open .ios-install-card { display: block; }
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-height: var(--touch-target);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--color-nav-foreground) 24%, transparent);
+  border-radius: var(--radius-pill);
+  color: var(--color-nav-muted);
+  font-size: var(--type-caption-size);
+  font-weight: 700;
+  text-decoration: none;
+}
+.github-link:hover {
+  border-color: color-mix(in srgb, var(--color-nav-foreground) 48%, transparent);
+  background: color-mix(in srgb, var(--color-nav-foreground) 10%, transparent);
+  color: var(--color-nav-foreground);
+}
+.github-link-icon { font-size: 0.72rem; letter-spacing: -0.04em; }
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -757,6 +777,8 @@ button[type="submit"]:active:not(:disabled),
   .app-chrome-link { display: none; }
   .app-chrome-actions { gap: var(--spacing-xs); }
   .ios-install-trigger { padding-inline: var(--spacing-sm); }
+  .github-link { width: var(--touch-target); padding-inline: 0; }
+  .github-link-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .theme-toggle { padding-inline: var(--spacing-sm); }
   .theme-toggle-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .nav-shell {

@@ -55,6 +55,16 @@ function NavShell() {
         <div className="app-chrome-actions">
           {workspace.kind === "account" && workspace.capabilities.admin && <NavLink className="app-chrome-link" to="/admin">Admin</NavLink>}
           <IosInstallHint />
+          <a
+            className="github-link"
+            href="https://github.com/tintii/MeepleMark-web"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="MeepleMark on GitHub (opens in a new tab)"
+          >
+            <span className="github-link-icon" aria-hidden="true">GH</span>
+            <span className="github-link-label">GitHub</span>
+          </a>
           <NavLink className="app-chrome-link" to="/account" aria-label="Account and workspace"><span aria-live="polite">{workspace.kind === "account" ? workspace.displayName : workspace.kind === "loading" ? "…" : "Guest"}</span></NavLink>
           <ThemeToggle />
         </div>

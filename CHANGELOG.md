@@ -15,6 +15,7 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
   connection and the limits of browser-local storage.
 - An iPhone Safari prompt with instructions for adding MeepleMark to the Home
   Screen when it is not already installed.
+- A header link to the MeepleMark source repository on GitHub.
 
 ### Changed
 
