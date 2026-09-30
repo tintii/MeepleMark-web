@@ -51,7 +51,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. Continue as a guest to use the complete scoring
+Open `http://localhost:8787`. Continue as a guest to use the complete scoring
 workflow without running the API or PostgreSQL.
 
 For account-backed development and project checks, see the
