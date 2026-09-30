@@ -8,7 +8,14 @@ test("cached root and nested play reload offline while data stays in IndexedDB",
   test.skip(testInfo.project.name === "webkit", "Playwright WebKit on this Linux host fails internally on offline reload; Chromium covers the production worker path.");
   const database = await openIsolatedApp(page, testInfo);
   await seedExistingFixture(page);
-  await expect(page.getByText("Ready for offline use")).toBeVisible({ timeout: 15_000 });
+  const offlineStatus = page.getByLabel("Offline use status: ready");
+  await expect(offlineStatus).toBeVisible({ timeout: 15_000 });
+  await offlineStatus.hover();
+  await expect(page.locator("#offline-ready-card").getByText("Ready for offline use")).toBeVisible();
+  const offlineHelp = page.getByRole("link", { name: "How offline use works" });
+  await expect(offlineHelp).toHaveAttribute("href", "/help/offline");
+  await offlineHelp.click();
+  await expect(page.getByRole("heading", { name: "Offline use", exact: true })).toBeVisible();
   await page.goto(`/play/fixture-category?testDb=${database}`);
   await expect(page.getByRole("heading", { name: "Fixture Garden" })).toBeVisible();
 
@@ -48,7 +55,7 @@ test("fresh production-preview deep links render without a pre-existing worker",
 test("account and conflict routes use the offline shell without caching API data", async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name === "webkit", "Playwright WebKit on this Linux host fails internally on offline reload; Chromium covers the production worker path.");
   const database = await openIsolatedApp(page, testInfo, "/account");
-  await expect(page.getByText("Ready for offline use")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByLabel("Offline use status: ready")).toBeVisible({ timeout: 15_000 });
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
 
@@ -81,7 +88,7 @@ test("a waiting worker does not reload an active scoring client or touch Indexed
   test.skip(testInfo.project.name === "webkit", "Covered in Chromium because the Linux WebKit harness cannot reliably drive worker lifecycle transitions.");
   const database = await openIsolatedApp(page, testInfo);
   await seedExistingFixture(page);
-  await expect(page.getByText("Ready for offline use")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByLabel("Offline use status: ready")).toBeVisible({ timeout: 15_000 });
   await page.goto(`/play/fixture-category?testDb=${database}`);
   await page.getByRole("button", { name: "Single player" }).click();
   const field = page.getByRole("textbox", { name: "Avery at the time, Flowers", exact: true });

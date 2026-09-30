@@ -15,6 +15,29 @@ test("storage failure and delay controls are available", async ({ page }, testIn
   await expect(page.getByRole("alert")).toContainText("display name");
 });
 
+test("iPhone Safari offers subtle Home Screen instructions", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 322, height: 584 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+      configurable: true,
+    });
+  });
+  await openIsolatedApp(page, testInfo);
+
+  const installButton = page.getByRole("button", { name: "Install" });
+  await expect(installButton).toBeVisible();
+  await installButton.click();
+  const instructions = page.locator("#ios-install-instructions");
+  await expect(instructions).toBeVisible();
+  const bounds = await instructions.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(322);
+  await page.keyboard.press("Escape");
+  await expect(instructions).toBeHidden();
+});
+
 for (const [name, viewport] of Object.entries(viewports)) {
   test(`shell renders at ${name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);

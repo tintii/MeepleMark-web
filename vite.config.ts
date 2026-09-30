@@ -58,6 +58,7 @@ export default defineConfig({
           underBase('account(?:\\?.*)?$'),
           underBase('conflicts(?:\\/[^/?]+)?(?:\\?.*)?$'),
           underBase('admin(?:\\?.*)?$'),
+          underBase('help\\/offline(?:\\?.*)?$'),
         ],
         cleanupOutdatedCaches: true,
         clientsClaim: false,

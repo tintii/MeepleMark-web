@@ -7,7 +7,7 @@ import { GameDetail } from "./pages/GameDetail";
 import { TemplateEditor } from "./pages/TemplateEditor";
 import { Players } from "./pages/Players";
 import { PRODUCT_NAME } from "./product";
-import { OfflineStatus } from "./components/OfflineStatus";
+import { OfflineReadyIndicator, OfflineUpdateStatus } from "./components/OfflineStatus";
 import { Account } from "./pages/Account";
 import { AccountProvider } from "./account/AccountContext";
 import { useAccount } from "./account/accountState";
@@ -15,6 +15,8 @@ import { SyncCoordinator } from "./components/SyncStatus";
 import { Conflicts } from "./pages/Conflicts";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { Admin } from "./pages/Admin";
+import { OfflineHelp } from "./pages/OfflineHelp";
+import { IosInstallHint } from "./components/IosInstallHint";
 import type { ReactNode } from "react";
 
 function WriteRoute({ children }: { children: ReactNode }) {
@@ -29,10 +31,13 @@ function NavShell() {
     <header className="app-chrome">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="app-chrome-inner">
-        <NavLink className="product-name" to="/" aria-label={`${PRODUCT_NAME} home`}>
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" />
-          <span>Meeple<span className="product-name-accent">Mark</span></span>
-        </NavLink>
+        <div className="product-cluster">
+          <NavLink className="product-name" to="/" aria-label={`${PRODUCT_NAME} home`}>
+            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" />
+            <span>Meeple<span className="product-name-accent">Mark</span></span>
+          </NavLink>
+          <OfflineReadyIndicator />
+        </div>
         <nav className="nav-shell" aria-label="Primary navigation">
           <NavLink to="/" end>
             <span className="nav-icon" aria-hidden="true"><svg data-icon="dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" strokeWidth="2" /><circle cx="8" cy="8" r="1.5" /><circle cx="16" cy="8" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="8" cy="16" r="1.5" /><circle cx="16" cy="16" r="1.5" /></svg></span>
@@ -49,6 +54,7 @@ function NavShell() {
         </nav>
         <div className="app-chrome-actions">
           {workspace.kind === "account" && workspace.capabilities.admin && <NavLink className="app-chrome-link" to="/admin">Admin</NavLink>}
+          <IosInstallHint />
           <NavLink className="app-chrome-link" to="/account" aria-label="Account and workspace"><span aria-live="polite">{workspace.kind === "account" ? workspace.displayName : workspace.kind === "loading" ? "…" : "Guest"}</span></NavLink>
           <ThemeToggle />
         </div>
@@ -63,7 +69,7 @@ function RoutedApp() {
     <>
       <SyncCoordinator />
       <NavShell />
-      <OfflineStatus />
+      <OfflineUpdateStatus />
       <main id="main-content">
         {workspace.kind === "loading" ? <div className="page"><p className="type-caption" role="status">Opening workspace…</p></div> : (
           <Routes>
@@ -77,6 +83,7 @@ function RoutedApp() {
             <Route path="/account" element={<Account />} />
             <Route path="/conflicts" element={<Conflicts />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/help/offline" element={<OfflineHelp />} />
           </Routes>
         )}
       </main>

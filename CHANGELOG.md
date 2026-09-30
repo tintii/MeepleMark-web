@@ -11,6 +11,10 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - A development guide covering setup, checks, and the repository layout.
 - Screenshots of play history and responsive scorekeeping layouts in the
   project documentation.
+- Contextual offline-use help explaining what remains available without a
+  connection and the limits of browser-local storage.
+- An iPhone Safari prompt with instructions for adding MeepleMark to the Home
+  Screen when it is not already installed.
 
 ### Changed
 
@@ -18,6 +22,9 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - Display imported win-direction and outcome rules correctly when starting a play.
 - Redesigned the mobile navigation with recognizable dice, game-stack, and
   meeple icons plus evenly sized tab controls.
+- Replaced the floating offline-ready badge with a compact header indicator and
+  details popover.
+- Improved mobile navigation and add-button spacing around device safe areas.
 - Consolidated project, development, deployment, and verification documentation
   and archived completed OpenSpec changes.
 
