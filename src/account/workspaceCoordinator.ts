@@ -7,6 +7,7 @@ export interface RememberedAccount extends AccountWorkspace {
   displayName: string;
   role: "readonly" | "user" | "admin";
   capabilities: { write: boolean; admin: boolean };
+  setup: { required: boolean };
   registration: { enabled: boolean; defaultRole: "readonly" | "user" };
 }
 
@@ -33,8 +34,8 @@ function parseAccount(value: string | null): RememberedAccount | null {
   try {
     const parsed = JSON.parse(value) as RememberedAccount;
     if (parsed.kind !== "account" || typeof parsed.accountId !== "string") return null;
-    if (!parsed.capabilities || !parsed.role) return { ...parsed, role: "readonly", capabilities: { write: false, admin: false }, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
-    return { ...parsed, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
+    if (!parsed.capabilities || !parsed.role) return { ...parsed, role: "readonly", capabilities: { write: false, admin: false }, setup: parsed.setup ?? { required: false }, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
+    return { ...parsed, setup: parsed.setup ?? { required: false }, registration: parsed.registration ?? { enabled: false, defaultRole: "user" } };
   } catch {
     return null;
   }

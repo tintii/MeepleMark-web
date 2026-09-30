@@ -53,6 +53,6 @@
 
 - [x] 8.1 Run API ownership and transaction suites on real PostgreSQL, including two users, lost responses, concurrent commits, invalid documents, stale tombstone updates, and account deletion.
 - [x] 8.2 Run Chromium/WebKit journeys with two browsers: provision/login, adopt guest data, record offline, reconnect, observe on the other browser, resolve conflicts, switch accounts, and resume after session expiry.
-- [ ] 8.3 Review new account/adoption/conflict/status UI at phone/desktop widths with keyboard navigation and offline conditions; retain the completed parity and unchanged golden regression suites.
+- [x] 8.3 Review new account/adoption/conflict/status UI at phone/desktop widths with keyboard navigation and offline conditions; retain the completed parity and unchanged golden regression suites.
 - [x] 8.4 Execute the documented fresh Compose setup, container replacement, and clean restore acceptance with representative data; record unavailable runtime/browser checks as outstanding rather than passed.
 - [x] 8.5 Run lint, unit/integration/browser suites, production build/image checks, and strict OpenSpec validation; update README, persistence roadmap, and operator/verification docs with actual support and limitations. (Verified 2026-09-27; Linux CI remains authoritative for the committed visual baselines.)

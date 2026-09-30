@@ -28,21 +28,20 @@ mkdir -p secrets
 docker compose build
 docker compose run --rm migrate
 docker compose up -d app
-docker compose exec app node dist-server/cli.js account create admin "Administrator"
 ```
 
-Redeem the displayed one-use setup code at `/account`, then explicitly promote
-the initialized, enabled account and sign in again or refresh:
+While the application is still private, open `/setup` in a browser and create
+the first administrator. MeepleMark signs that account in and opens `/admin`,
+where you can choose the `user` or `readonly` signup default and deliberately
+open public registration. The setup page closes permanently as soon as any
+account exists; it is separate from public registration and cannot be used to
+promote later signups. No terminal account command is required on a fresh
+installation.
 
-```bash
-docker compose exec app node dist-server/cli.js account role admin admin
-```
-
-Open `/admin` to choose the `user` or `readonly` signup default and deliberately
-open registration. Registration begins closed on fresh installs and upgrades;
-the first registrant is never promoted automatically. Use `account recovery
-admin` to invalidate older codes and issue a replacement. Codes expire after 24
-hours and are never stored in plaintext.
+Complete this step before exposing the application through a public proxy. If
+an installation already has accounts, the CLI commands below remain available
+for recovery and maintenance. One-use recovery codes expire after 24 hours and
+are never stored in plaintext.
 The database has no published host port. The application binds to loopback by
 default; adapt `docs/Caddyfile.example` for the public hostname and TLS.
 
@@ -76,6 +75,14 @@ that the restore discards.
 
 Named volumes are not backups. Store dumps encrypted with operator-selected
 retention and access controls.
+
+The **Export workspace** action on an account downloads only that account's
+active browser workspace. Every account—including an administrator—has a
+separate private collection and play history, and administrators cannot export
+another account's content. A personal export can preserve locally pending data,
+but it excludes credentials, administrative data, and server-only state. It
+does not replace the PostgreSQL backup procedure below for installation
+recovery.
 
 ```bash
 docker compose exec -T db pg_dump -U meeplemark -d meeplemark -Fc > meeplemark.dump

@@ -46,11 +46,11 @@ export async function buildApp({ config, pool }: AppDependencies): Promise<Fasti
     return { status: "ready", schema: result.rows[0].version };
   });
   app.get("/api/v1/meta", async () => {
-    const result = await pool.query<{ installation_id: string; recovery_epoch: string; registration_enabled: boolean; registration_default_role: "readonly" | "user" }>(
-      "SELECT installation_id, recovery_epoch, registration_enabled, registration_default_role FROM installation WHERE singleton = TRUE",
+    const result = await pool.query<{ installation_id: string; recovery_epoch: string; registration_enabled: boolean; registration_default_role: "readonly" | "user"; setup_required: boolean }>(
+      "SELECT installation_id, recovery_epoch, registration_enabled, registration_default_role, NOT EXISTS (SELECT 1 FROM users) AS setup_required FROM installation WHERE singleton = TRUE",
     );
     if (result.rowCount !== 1) throw new Error("installation identity is unavailable");
-    return { protocolVersion: PROTOCOL_VERSION, installationId: result.rows[0].installation_id, recoveryEpoch: result.rows[0].recovery_epoch, registration: { enabled: result.rows[0].registration_enabled, defaultRole: result.rows[0].registration_default_role } };
+    return { protocolVersion: PROTOCOL_VERSION, installationId: result.rows[0].installation_id, recoveryEpoch: result.rows[0].recovery_epoch, setup: { required: result.rows[0].setup_required }, registration: { enabled: result.rows[0].registration_enabled, defaultRole: result.rows[0].registration_default_role } };
   });
   await registerAuthRoutes(app, pool, config);
   await registerSyncRoutes(app, pool, config);

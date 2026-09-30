@@ -1,4 +1,4 @@
-import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { PlayList } from "./pages/PlayList";
 import { NewPlay } from "./pages/NewPlay";
 import { PlayRoute } from "./pages/PlayRoute";
@@ -16,8 +16,42 @@ import { Conflicts } from "./pages/Conflicts";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { Admin } from "./pages/Admin";
 import { OfflineHelp } from "./pages/OfflineHelp";
+import { Setup } from "./pages/Setup";
 import { IosInstallHint } from "./components/IosInstallHint";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { apiJson } from "./account/api";
+import { FailurePage } from "./components/FailurePage";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
+
+function E2eRenderFailure() {
+  if (import.meta.env.VITE_E2E === "true" && new URLSearchParams(window.location.search).has("e2eRenderFailure")) throw new Error("E2E render failure");
+  return null;
+}
+
+function SetupNotice() {
+  const { pathname } = useLocation();
+  const [notice, setNotice] = useState<{ dismissKey: string; pathname: string } | null>(null);
+
+  useEffect(() => {
+    let current = true;
+    if (pathname === "/setup") return () => { current = false; };
+    void apiJson<{ installationId: string; setup: { required: boolean } }>("/api/v1/meta").then((meta) => {
+      const key = `meeplemark:setup-notice-dismissed:${meta.installationId}`;
+      let dismissed = false;
+      try { dismissed = localStorage.getItem(key) === "1"; } catch { /* Show the notice when storage is unavailable. */ }
+      if (current) setNotice(meta.setup.required && !dismissed ? { dismissKey: key, pathname } : null);
+    }).catch(() => { if (current) setNotice(null); });
+    return () => { current = false; };
+  }, [pathname]);
+
+  if (!notice || notice.pathname !== pathname || pathname === "/setup") return null;
+  const dismiss = () => { try { localStorage.setItem(notice.dismissKey, "1"); } catch { /* Dismiss for this page load. */ } setNotice(null); };
+  return <aside className="setup-notice" aria-label="Installation setup reminder">
+    <span role="status">This installation still needs its first administrator.</span>
+    <Link to="/setup">Set up now</Link>
+    <button type="button" onClick={dismiss}>Dismiss</button>
+  </aside>;
+}
 
 function WriteRoute({ children }: { children: ReactNode }) {
   const { workspace } = useAccount();
@@ -78,9 +112,11 @@ function RoutedApp() {
   const { workspace } = useAccount();
   return (
     <>
+      <E2eRenderFailure />
       <SyncCoordinator />
       <NavShell />
       <OfflineUpdateStatus />
+      <SetupNotice />
       <main id="main-content">
         {workspace.kind === "loading" ? <div className="page"><p className="type-caption" role="status">Opening workspace…</p></div> : (
           <Routes>
@@ -92,9 +128,11 @@ function RoutedApp() {
             <Route path="/collection/:gameId/template" element={<WriteRoute><TemplateEditor /></WriteRoute>} />
             <Route path="/players" element={<Players />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/setup" element={<Setup />} />
             <Route path="/conflicts" element={<Conflicts />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/help/offline" element={<OfflineHelp />} />
+            <Route path="*" element={<FailurePage code={404} title="Page not found" explanation="That address does not match a page in MeepleMark." actions={<Link className="button-link primary-button" to="/">Home</Link>} />} />
           </Routes>
         )}
       </main>
@@ -104,11 +142,13 @@ function RoutedApp() {
 
 export function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-      <AccountProvider>
-        <RoutedApp />
-      </AccountProvider>
-    </BrowserRouter>
+    <AppErrorBoundary>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <AccountProvider>
+          <RoutedApp />
+        </AccountProvider>
+      </BrowserRouter>
+    </AppErrorBoundary>
   );
 }
 

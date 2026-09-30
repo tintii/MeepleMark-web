@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   closeWorkspaceConnectionsForTests,
   openWorkspaceDb,
   putScopedRecord,
+  readWorkspaceSnapshot,
   setActiveWorkspace,
   workspaceDatabaseName,
   type AccountWorkspace,
@@ -67,5 +68,40 @@ describe("scoped browser repositories", () => {
     setActiveWorkspace(readonly);
     await expect(putScopedRecord("players", { id: "blocked", displayName: "Blocked" })).rejects.toThrow("read-only");
     expect(await (await openWorkspaceDb(readonly)).get("players", "blocked")).toBeUndefined();
+  });
+
+  it("reads owned and unowned domain documents in one read-only transaction", async () => {
+    setActiveWorkspace({ kind: "guest" });
+    const db = await openWorkspaceDb();
+    const owned = { id: "owned", name: "Owned", slug: null, bggThingId: null, origin: "custom", ownedAt: "2026-01-01T00:00:00.000Z", localTemplate: null, templateVersion: 0 };
+    const unowned = { ...owned, id: "unowned", name: "Unowned", ownedAt: null };
+    const player = { id: "player", displayName: "Avery", bggUsername: null, preferredColorIndex: null };
+    const play = { id: "play", playedAt: "2026-01-02T00:00:00.000Z", status: "draft", gameName: "Unowned", gameRef: "unowned", winDirection: "high", outcome: "ranked", scoring: null, players: [{ name: "Avery", playerRef: "player", total: null, totalIsOverridden: false, rank: null, rankIsOverridden: false }], notes: null };
+    await Promise.all([db.put("games", owned), db.put("games", unowned), db.put("players", player), db.put("plays", { id: "play", playedAt: play.playedAt, status: "draft", gameName: "Unowned", gameRef: "unowned", play })]);
+    const transaction = vi.spyOn(db, "transaction");
+
+    const snapshot = await readWorkspaceSnapshot();
+
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(transaction).toHaveBeenCalledWith(["games", "players", "plays"], "readonly");
+    expect(snapshot.games).toEqual(expect.arrayContaining([owned, unowned]));
+    expect(snapshot.players).toEqual([player]);
+    expect(snapshot.plays).toEqual([play]);
+  });
+
+  it("does not touch domain or account-only state while reading an account snapshot", async () => {
+    setActiveWorkspace(accountA);
+    await putScopedRecord("players", { id: "pending", displayName: "Pending", bggUsername: null, preferredColorIndex: null });
+    const db = await openWorkspaceDb(accountA);
+    const before = {
+      players: await db.getAll("players"),
+      outbox: await db.getAll("outbox"),
+      shadows: await db.getAll("serverShadows"),
+    };
+
+    expect(await readWorkspaceSnapshot()).toMatchObject({ players: before.players, games: [], plays: [] });
+    expect(await db.getAll("players")).toEqual(before.players);
+    expect(await db.getAll("outbox")).toEqual(before.outbox);
+    expect(await db.getAll("serverShadows")).toEqual(before.shadows);
   });
 });

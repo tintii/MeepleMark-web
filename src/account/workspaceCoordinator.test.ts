@@ -4,7 +4,7 @@ import { activateWorkspace, isCurrentGeneration, lockWorkspace, workspaceGenerat
 
 const accountA: RememberedAccount = {
   kind: "account", origin: "https://example.test", installationId: "install", recoveryEpoch: "epoch", accountId: "a",
-  protocolVersion: 1, username: "a", displayName: "A", role: "user", capabilities: { write: true, admin: false }, registration: { enabled: false, defaultRole: "user" },
+  protocolVersion: 1, username: "a", displayName: "A", role: "user", capabilities: { write: true, admin: false }, setup: { required: false }, registration: { enabled: false, defaultRole: "user" },
 };
 const accountB: RememberedAccount = { ...accountA, accountId: "b", username: "b", displayName: "B" };
 

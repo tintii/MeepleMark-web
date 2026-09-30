@@ -5,15 +5,16 @@ import { useAccount } from "../account/accountState";
 import { SyncStatusPanel } from "../components/SyncStatus";
 import { Link } from "react-router-dom";
 import { AdoptionPanel } from "../components/AdoptionPanel";
+import { WorkspaceExportSection } from "../components/WorkspaceExportSection";
 
 export function Account() {
   const { workspace, refresh, switchToGuest, logoutLocally } = useAccount();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [registration, setRegistration] = useState<{ enabled: boolean; defaultRole: "readonly" | "user" } | null>(null);
+  const [installation, setInstallation] = useState<{ setup: { required: boolean }; registration: { enabled: boolean; defaultRole: "readonly" | "user" } } | null>(null);
   const [showRecovery, setShowRecovery] = useState(false);
 
-  useEffect(() => { if (workspace.kind === "guest") void apiJson<{ registration: { enabled: boolean; defaultRole: "readonly" | "user" } }>("/api/v1/meta").then((meta) => setRegistration(meta.registration)).catch(() => setRegistration(null)); }, [workspace.kind]);
+  useEffect(() => { if (workspace.kind === "guest") void apiJson<{ setup: { required: boolean }; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }>("/api/v1/meta").then(setInstallation).catch(() => setInstallation(null)); }, [workspace.kind]);
 
   const submit = async (operation: () => Promise<unknown>, allowUnlock = false): Promise<void> => {
     setBusy(true);
@@ -67,17 +68,21 @@ export function Account() {
     <div className="page">
       <PageHeader title="Account" subtitle={workspace.kind === "account" ? `Using ${workspace.displayName}'s synchronized workspace.` : "Using the local guest workspace."} />
       {error && <p className="form-error" role="alert">{error}</p>}
+      <WorkspaceExportSection />
       {workspace.kind === "guest" ? (
         <>
-          <GroupedSection title="Create account">
-            {registration?.enabled ? <form onSubmit={register}>
+          {installation?.setup.required ? <GroupedSection title="Finish installation setup">
+            <p>Create the first administrator in the browser before opening this server to other people.</p>
+            <Link className="button-link" to="/setup">Create first administrator</Link>
+          </GroupedSection> : <GroupedSection title="Create account">
+            {installation?.registration.enabled ? <form onSubmit={register}>
               <label className="field"><span className="field-label">Username</span><input name="username" autoComplete="username" minLength={3} maxLength={64} required /></label>
               <label className="field"><span className="field-label">Display name <span className="field-hint">(optional)</span></span><input name="displayName" autoComplete="name" maxLength={128} /></label>
               <label className="field"><span className="field-label">Password</span><input name="password" type="password" minLength={12} maxLength={1024} autoComplete="new-password" required /><span className="field-hint">Use at least 12 characters.</span></label>
               <button disabled={busy || !navigator.onLine} type="submit">Create account</button>
               {!navigator.onLine && <p className="type-caption">Connect to this server to create an account. Guest scoring remains available offline.</p>}
             </form> : <p>Registration is currently closed. You can still sign in or continue as a guest.</p>}
-          </GroupedSection>
+          </GroupedSection>}
           <GroupedSection title="Sign in">
             <form onSubmit={login}>
               <label className="field"><span className="field-label">Username</span><input name="username" autoComplete="username" required /></label>

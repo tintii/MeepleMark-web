@@ -56,6 +56,7 @@ export default defineConfig({
           underBase('collection(?:\\/[^/?]+(?:\\/template)?)?(?:\\?.*)?$'),
           underBase('players(?:\\?.*)?$'),
           underBase('account(?:\\?.*)?$'),
+          underBase('setup(?:\\?.*)?$'),
           underBase('conflicts(?:\\/[^/?]+)?(?:\\?.*)?$'),
           underBase('admin(?:\\?.*)?$'),
           underBase('help\\/offline(?:\\?.*)?$'),

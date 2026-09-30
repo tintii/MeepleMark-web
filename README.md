@@ -26,7 +26,8 @@ database.
   elimination-based games.
 - Keeps a game collection, player directory, reusable score sheets, and
   completed-play history.
-- Imports and exports individual score sheets as JSON.
+- Imports and exports individual score sheets, and exports the active workspace,
+  as JSON.
 - Saves locally in IndexedDB and works offline after the application shell has
   been loaded successfully.
 - Optionally synchronizes account-owned data through a self-hosted

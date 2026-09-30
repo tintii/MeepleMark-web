@@ -13,6 +13,7 @@ export const displayNameSchema = z.string().trim().min(1).max(128);
 export const accountRoleSchema = z.enum(["readonly", "user", "admin"]);
 export const registrationRoleSchema = z.enum(["readonly", "user"]);
 export const registerRequestSchema = z.object({ username: usernameSchema, password: passwordSchema, displayName: displayNameSchema.optional() }).strict();
+export const initialAdminSetupRequestSchema = z.object({ username: usernameSchema, password: passwordSchema, displayName: displayNameSchema.optional() }).strict();
 export const setupRequestSchema = z.object({ code: z.string().min(20).max(512), password: passwordSchema }).strict();
 export const loginRequestSchema = z.object({ username: usernameSchema, password: z.string().min(1).max(1024) }).strict();
 export const passwordChangeSchema = z.object({ currentPassword: z.string().min(1).max(1024), newPassword: passwordSchema }).strict();

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { apiJson, csrfToken } from "../account/api";
 import { useAccount } from "../account/accountState";
 import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
+import { FailurePage } from "../components/FailurePage";
 
 type Role = "readonly" | "user" | "admin";
 interface AdminUser { id: string; username: string; displayName: string; role: Role; disabled: boolean; createdAt: string }
@@ -55,7 +56,7 @@ export function Admin() {
 
   if (workspace.kind === "loading") return <div className="page"><PageHeader title="Administration" subtitle="Checking access…" /></div>;
   if (workspace.kind !== "account") return <Navigate to="/account" replace />;
-  if (!workspace.capabilities.admin) return <div className="page"><PageHeader title="Administration" subtitle="Access denied" /><p role="alert">An enabled administrator account is required.</p></div>;
+  if (!workspace.capabilities.admin) return <FailurePage code={403} title="Access forbidden" explanation="Your account does not have permission to open administration." actions={<Link className="button-link primary-button" to="/">Home</Link>} />;
   if (!navigator.onLine) return <div className="page"><PageHeader title="Administration" subtitle="Connection required" /><p role="alert">Administration is available only while connected. No action will be queued.</p></div>;
 
   const mutate = async (operation: () => Promise<unknown>, message: string) => {

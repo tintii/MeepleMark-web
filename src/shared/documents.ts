@@ -79,6 +79,10 @@ export function validatePlayerDocument(value: unknown): ValidationIssue[] {
   return issues;
 }
 
+export function validatePlayDocument(value: unknown): ValidationIssue[] {
+  return PlayValidation.validate(value);
+}
+
 /** Encode the persisted/API play shape, including required null outcome fields. */
 export function encodePlayDocument(play: Play): Record<string, unknown> {
   const encoded = encodePlay(play);
@@ -115,7 +119,7 @@ export function validateEntityDocument(entityType: EntityType, entityId: string,
       issues = validatePlayerDocument(value);
       break;
     case "play":
-      issues = PlayValidation.validate(value);
+      issues = validatePlayDocument(value);
       break;
   }
   if (isRecord(value) && value.id !== entityId) {

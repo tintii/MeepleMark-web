@@ -31,6 +31,25 @@ integration("account authentication", () => {
   });
   afterAll(async () => { await app?.close(); await pool?.end(); });
 
+  it("allows exactly one browser-created first administrator", async () => {
+    expect((await app.inject({ method: "GET", url: "/api/v1/meta" })).json()).toMatchObject({ setup: { required: true }, registration: { enabled: false } });
+    const foreign = await app.inject({ method: "POST", url: "/api/v1/setup/admin", headers: { origin: "https://evil.example" }, payload: { username: "first-admin", password: "correct horse battery" } });
+    expect(foreign.statusCode).toBe(403);
+    const forged = await app.inject({ method: "POST", url: "/api/v1/setup/admin", headers: { origin: config.APP_ORIGIN }, payload: { username: "first-admin", password: "correct horse battery", role: "user" } });
+    expect(forged.statusCode).toBe(400);
+    const attempts = await Promise.all(["first-admin", "other-admin"].map((username) => app.inject({
+      method: "POST", url: "/api/v1/setup/admin", headers: { origin: config.APP_ORIGIN }, payload: { username, displayName: "First Administrator", password: "correct horse battery" },
+    })));
+    expect(attempts.map((reply) => reply.statusCode).sort()).toEqual([201, 409]);
+    const success = attempts.find((reply) => reply.statusCode === 201)!;
+    expect(success.headers["cache-control"]).toBe("no-store");
+    expect((await app.inject({ method: "GET", url: "/api/v1/auth/session", headers: { cookie: sessionCookie(success.headers) } })).json()).toMatchObject({ role: "admin", capabilities: { write: true, admin: true } });
+    expect((await pool.query("SELECT count(*)::int AS count FROM users WHERE role='admin' AND password_hash IS NOT NULL")).rows[0].count).toBe(1);
+    expect((await pool.query("SELECT count(*)::int AS count FROM sync_state")).rows[0].count).toBe(1);
+    expect((await pool.query("SELECT after_summary FROM admin_audit_events WHERE action='installation.admin_created'")).rows[0].after_summary).toMatchObject({ role: "admin" });
+    expect((await app.inject({ method: "GET", url: "/api/v1/meta" })).json()).toMatchObject({ setup: { required: false }, registration: { enabled: false } });
+  });
+
   it("rejects invalid/expired setup codes and consumes a valid code once", async () => {
     const created = await createAccount(pool, "setup-user");
     const bad = await app.inject({ method: "POST", url: "/api/v1/auth/setup", headers: { origin: config.APP_ORIGIN }, payload: { code: "x".repeat(32), password: "correct horse battery" } });

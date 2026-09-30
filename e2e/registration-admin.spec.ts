@@ -5,7 +5,7 @@ import { createAccount, setAccountRole } from "../server/operator";
 test.use({ serviceWorkers: "block" });
 
 const adminSession = { accountId: "11111111-1111-4111-8111-111111111111", username: "admin", displayName: "Administrator", role: "admin", capabilities: { write: true, admin: true } };
-const meta = { protocolVersion: 1, installationId: "22222222-2222-4222-8222-222222222222", recoveryEpoch: "33333333-3333-4333-8333-333333333333", registration: { enabled: true, defaultRole: "user" } };
+const meta = { protocolVersion: 1, installationId: "22222222-2222-4222-8222-222222222222", recoveryEpoch: "33333333-3333-4333-8333-333333333333", setup: { required: false }, registration: { enabled: true, defaultRole: "user" } };
 const managed = { id: "44444444-4444-4444-8444-444444444444", username: "avery", displayName: "Avery", role: "user", disabled: false, createdAt: "2026-09-28T00:00:00.000Z" };
 
 async function mockAdmin(page: Page): Promise<void> {
@@ -22,6 +22,61 @@ async function mockAdmin(page: Page): Promise<void> {
   });
 }
 
+test("fresh installations create their first administrator in the browser", async ({ page }) => {
+  let setupRequired = true;
+  let signedIn = false;
+  let setupRequests = 0;
+  let setupPayload: Record<string, unknown> = {};
+  await page.route("**/api/v1/**", async (route) => {
+    const url = new URL(route.request().url());
+    const json = (body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body), headers: { "Cache-Control": "no-store" } });
+    if (url.pathname === "/api/v1/meta") return json({ ...meta, setup: { required: setupRequired }, registration: { enabled: false, defaultRole: "user" } });
+    if (url.pathname === "/api/v1/auth/session") return signedIn ? json(adminSession) : json({ error: "unauthorized" }, 401);
+    if (url.pathname === "/api/v1/setup/admin" && route.request().method() === "POST") {
+      setupRequests += 1;
+      setupPayload = route.request().postDataJSON();
+      setupRequired = false;
+      signedIn = true;
+      return json({ accountId: adminSession.accountId, csrfToken: "test-csrf" }, 201);
+    }
+    if (url.pathname === "/api/v1/admin/overview") return json({ totalAccounts: 1, enabledAccounts: 1, activeAdmins: 1 });
+    if (url.pathname === "/api/v1/admin/users") return json({ items: [], page: 1, limit: 25, total: 0 });
+    if (url.pathname === "/api/v1/admin/registration") return json({ enabled: false, defaultRole: "user" });
+    if (url.pathname === "/api/v1/admin/audit") return json({ items: [], total: 0 });
+    return json({}, 404);
+  });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  const setupNotice = page.getByRole("complementary", { name: "Installation setup reminder" });
+  await expect(setupNotice).toBeVisible();
+  await setupNotice.getByRole("link", { name: "Set up now" }).click();
+  await expect(page).toHaveURL(/\/setup$/);
+  await page.goto("/");
+  await setupNotice.getByRole("button", { name: "Dismiss" }).click();
+  await expect(setupNotice).toBeHidden();
+  await page.reload();
+  await expect(setupNotice).toBeHidden();
+  await page.goto("/account");
+  await page.getByRole("link", { name: "Create first administrator" }).click();
+  await expect(page.getByRole("heading", { name: "Create the first administrator" })).toBeVisible();
+  await page.getByLabel("Username").fill("admin");
+  await page.getByLabel("Display name").fill("Administrator");
+  await page.locator('input[name="password"]').fill("correct horse battery");
+  await page.getByLabel("Confirm password").fill("different horse battery");
+  await page.getByRole("button", { name: "Create administrator" }).click();
+  await expect(page.getByRole("alert")).toHaveText("Passwords do not match.");
+  expect(setupRequests).toBe(0);
+  await page.getByLabel("Confirm password").fill("correct horse battery");
+  await page.getByRole("button", { name: "Create administrator" }).click();
+  await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+  expect(setupRequests).toBe(1);
+  expect(setupPayload).toEqual({ username: "admin", displayName: "Administrator", password: "correct horse battery" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await page.goto("/setup");
+  await expect(page.getByRole("heading", { name: "Setup complete" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+});
+
 test("registration and administration reflow at phone and desktop widths with keyboard-safe deletion", async ({ page }) => {
   await mockAdmin(page);
   for (const viewport of [{ width: 375, height: 812 }, { width: 1440, height: 1000 }]) {
@@ -30,6 +85,8 @@ test("registration and administration reflow at phone and desktop widths with ke
     await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
     await expect(page.locator('a[href="/admin"]')).toHaveCount(1);
     await expect(page.getByText("Avery", { exact: true })).toBeVisible();
+    const listGap = await page.locator(".admin-user-card").evaluate((card) => card.getBoundingClientRect().top - document.querySelector(".admin-filters")!.getBoundingClientRect().bottom);
+    expect(listGap).toBeGreaterThanOrEqual(16);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
   const deleteButton = page.getByRole("button", { name: "Delete", exact: true });
@@ -59,7 +116,7 @@ test("open registration is usable at 375px and direct non-admin access is denied
     if (url.pathname === "/api/v1/meta") return route.fulfill({ contentType: "application/json", body: JSON.stringify(meta) });
     return route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ error: "admin_forbidden" }) });
   });
-  await page.goto("/admin"); await expect(page.getByText("An enabled administrator account is required.")).toBeVisible(); await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
+  await page.goto("/admin"); await expect(page.getByRole("heading", { name: "Access forbidden" })).toBeVisible(); await expect(page.getByText("403", { exact: true })).toBeVisible(); await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
 });
 
 test("real registration, demotion with held offline work, and restoration", async ({ browser }, testInfo) => {

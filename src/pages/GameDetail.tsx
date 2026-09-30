@@ -6,6 +6,7 @@ import { Dialog } from "../components/Dialog";
 import { GroupedSection, PageHeader } from "../components/PageHeader";
 import { useAccount } from "../account/accountState";
 import { scoreSheetFilename, serializeScoreSheet } from "../draft/scoreSheetPortability";
+import { FailurePage } from "../components/FailurePage";
 
 /**
  * `/collection/:gameId` — a game, its plays, and the score-sheet /
@@ -49,11 +50,7 @@ export function GameDetail() {
     );
   }
   if (game === null) {
-    return (
-      <div className="page">
-        <p role="alert">Game not found.</p>
-      </div>
-    );
+    return <FailurePage code={404} title="Game not found" explanation="This game is not available in the current collection." actions={<Link className="button-link primary-button" to="/collection">Collection</Link>} />;
   }
 
   const currentGame = game; // narrowed non-null; closures below capture this, not `game`

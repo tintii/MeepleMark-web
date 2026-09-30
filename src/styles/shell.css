@@ -301,6 +301,12 @@ fieldset {
   max-width: var(--content-wide-width);
 }
 
+.failure-page { display: grid; justify-items: start; gap: var(--spacing-md); padding-top: var(--spacing-xxxl); }
+.failure-page > * { max-width: 100%; margin: 0; overflow-wrap: anywhere; }
+.failure-code { color: var(--color-accent); font-family: var(--font-family-display); font-size: var(--type-display-large-size); font-weight: var(--type-display-large-weight); line-height: var(--type-display-large-line-height); }
+.failure-explanation { color: var(--color-text-secondary); }
+.failure-actions { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); margin-top: var(--spacing-sm); }
+
 .nav-shell a,
 .app-chrome-link {
   color: var(--color-nav-muted);
@@ -686,6 +692,10 @@ fieldset {
 
 .skip-link:focus { transform: none; }
 
+.setup-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--spacing-sm) var(--spacing-md); padding: var(--spacing-sm) var(--spacing-md); border-bottom: 1px solid var(--color-border); background: var(--color-surface-raised); }
+.setup-notice a { font-weight: 700; }
+.setup-notice button { min-height: auto; padding: var(--spacing-xs) var(--spacing-sm); }
+
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -761,6 +771,7 @@ button[type="submit"]:active:not(:disabled),
 .admin-filters { display: grid; grid-template-columns: minmax(12rem, 2fr) 1fr 1fr auto; gap: var(--spacing-md); align-items: end; }
 .admin-filters .field { margin: 0; }
 .admin-user-list, .audit-list { display: grid; gap: var(--spacing-md); }
+.admin-user-list { margin-top: var(--spacing-lg); }
 .admin-user-card { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(8rem, auto); gap: var(--spacing-md); padding: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-raised); }
 .admin-user-card h3, .admin-user-card p { margin: 0; }
 .admin-user-card .action-row { grid-column: 1 / -1; }

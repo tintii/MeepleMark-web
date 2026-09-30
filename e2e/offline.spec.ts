@@ -49,7 +49,7 @@ test("fresh production-preview deep links render without a pre-existing worker",
   const database = `meeplemark-e2e-${testInfo.project.name}-fresh-deep-link-${testInfo.retry}`;
   const response = await page.goto(`/collection/not-present?testDb=${database}`);
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole("alert")).toContainText("Game not found");
+  await expect(page.getByRole("heading", { name: "Game not found" })).toBeVisible();
 });
 
 test("account and conflict routes use the offline shell without caching API data", async ({ page, context }, testInfo) => {

@@ -1,4 +1,5 @@
 import { openDB, type IDBPDatabase } from "idb";
+import type { WorkspaceSnapshot } from "../export/workspaceExport";
 import type { EntityType } from "../shared/documents";
 
 export type GuestWorkspace = { kind: "guest" };
@@ -150,6 +151,23 @@ export async function deleteScopedRecord(store: EntityStore, entityId: string): 
   } satisfies OutboxEntry);
   await transaction.done;
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("meeplemark:local-change", { detail: { key } }));
+}
+
+/** Captures only portable domain documents from one point-in-time local view. */
+export async function readWorkspaceSnapshot(scope: WorkspaceScope = activeScope): Promise<WorkspaceSnapshot> {
+  const db = await openWorkspaceDb(scope);
+  const transaction = db.transaction(["games", "players", "plays"], "readonly");
+  const [games, players, playRows] = await Promise.all([
+    transaction.objectStore("games").getAll(),
+    transaction.objectStore("players").getAll(),
+    transaction.objectStore("plays").getAll(),
+  ]);
+  await transaction.done;
+  return {
+    games,
+    players,
+    plays: (playRows as Array<{ play?: unknown }>).map((row) => row.play),
+  };
 }
 
 export async function closeWorkspaceConnectionsForTests(): Promise<void> {

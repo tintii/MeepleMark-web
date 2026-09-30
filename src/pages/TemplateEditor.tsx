@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteTemplate, getGame, setTemplate, type GameRecord } from "../storage/db";
 import { TemplateValidation } from "../engine/validation";
 import { buildTemplateCandidate } from "../draft/templateCandidate";
 import type { OutcomeMode, WinDirection } from "../engine/models";
 import { PageHeader } from "../components/PageHeader";
 import { readScoreSheetFile } from "../draft/scoreSheetPortability";
+import { FailurePage } from "../components/FailurePage";
 
 const CATEGORY_CAP = 10;
 
@@ -46,11 +47,7 @@ export function TemplateEditor() {
     );
   }
   if (game === null) {
-    return (
-      <div className="page">
-        <p role="alert">Game not found.</p>
-      </div>
-    );
+    return <FailurePage code={404} title="Game not found" explanation="This game is not available, so its score sheet cannot be edited." actions={<Link className="button-link primary-button" to="/collection">Collection</Link>} />;
   }
 
   function updateLabel(index: number, value: string) {

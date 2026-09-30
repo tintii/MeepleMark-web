@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 export type AccountRole = "readonly" | "user" | "admin";
 export interface AccountCapabilities { write: boolean; admin: boolean }
 interface AccountIdentity { accountId: string; username: string; displayName: string; role: AccountRole; capabilities: AccountCapabilities }
-interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }
+interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string; setup: { required: boolean }; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }
 export type WorkspaceState =
   | { kind: "loading" }
   | { kind: "guest" }

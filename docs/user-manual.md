@@ -92,6 +92,41 @@ or files larger than 64 KiB are rejected. Import transfers category labels and
 rules. When saved, MeepleMark assigns the destination game's local slug and
 version, rather than trusting those values from the imported file.
 
+## Exporting a workspace
+
+Open **Account** and select **Export workspace** to download the active browser
+workspace. Export works for guests and signed-in accounts, including read-only
+accounts, and does not require a connection. The file contains private
+collection, player, and play data, including locally saved changes that have not
+yet synchronized. Each account can export only its own active workspace;
+administrators cannot export another account's content. Store the file
+accordingly.
+
+The filename is `meeplemark-workspace-YYYY-MM-DD.json`. Its versioned envelope
+has this shape:
+
+```json
+{
+  "format": "meeplemark-workspace",
+  "version": 1,
+  "exportedAt": "2026-09-30T12:34:56.000Z",
+  "games": [],
+  "players": [],
+  "plays": []
+}
+```
+
+`games` includes both collection and history-linked games; each game's
+`ownedAt` records collection membership and `localTemplate` contains its saved
+score sheet. `plays` contains canonical play documents with historical names,
+relationships, exact decimal strings, and embedded score-sheet snapshots. The
+export deliberately excludes account identity, credentials, synchronization
+state, and administrative data. Importing a workspace is not yet supported.
+
+This personal, browser-local export is not a whole-installation backup.
+Self-hosting operators must continue to back up and restore PostgreSQL as
+described in the self-hosting guide.
+
 ## Players and history
 
 The player directory avoids retyping regular players. Renaming or deleting a
@@ -105,8 +140,28 @@ MeepleMark saves changes on the device first. After the application has loaded
 successfully once, guest scoring and previously loaded account workspaces remain
 usable offline.
 
-An account is optional and belongs to one self-hosted installation. When signed
-in, the Account screen distinguishes local saves from pending, synchronized, or
-conflicted changes. If a conflict is reported, open **Review conflicts** and
-choose the local or server version. Do not clear browser storage before pending
-changes have synchronized.
+An account is optional and belongs to one self-hosted installation. Every
+account has a separate private workspace containing its own collection, player
+directory, score sheets, and play history. The `admin` role adds installation
+management permissions but does not grant access to other accounts' workspace
+content. When signed in, the Account screen distinguishes local saves from
+pending, synchronized, or conflicted changes. If a conflict is reported, open
+**Review conflicts** and choose the local or server version. Do not clear
+browser storage before pending changes have synchronized.
+
+On a fresh self-hosted installation, open **Account**, then select **Create
+first administrator**. Choose a username and a password of at least 12
+characters. This one-time setup is only available before any account exists and
+is separate from normal registration. Afterward, administrators can use
+**Administration** to keep registration closed or allow new `user` or
+`readonly` accounts. Until setup is complete, the app also shows a setup
+reminder once per browser; follow its link or dismiss it.
+
+## When a page cannot open
+
+MeepleMark shows a recovery page when an address is unknown, a requested game
+is missing, or an unexpected display error occurs. Use the offered **Home**,
+**Collection**, or **Reload** action to continue. Signed-out visitors opening
+administration are sent to **Account** to sign in; signed-in accounts without
+administrator permission see an access-forbidden page instead. Form, sync, and
+connection errors stay with the current workflow so they can be retried there.

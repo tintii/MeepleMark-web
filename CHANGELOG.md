@@ -6,6 +6,9 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 
 ### Added
 
+- Offline JSON export of the active guest or private per-account workspace,
+  preserving collection, player, play, and pending local data without exposing
+  sync state or another account's content.
 - Import and export individual game score sheets as JSON.
 - A concise user manual, including the score-sheet JSON format.
 - A development guide covering setup, checks, and the repository layout.
@@ -19,9 +22,14 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
 - A repo-local Codex development workflow combining Ponytail, OpenSpec,
   changelog and documentation maintenance, verification guidance, and
   repeatable local setup.
+- A one-time browser setup flow that creates and signs in the first
+  administrator on a fresh self-hosted installation without terminal account
+  commands, with a dismissible first-visit reminder linking to setup.
 
 ### Changed
 
+- Added consistent, responsive 403, 404, and unexpected-error pages with safe
+  recovery actions for forbidden access, unknown addresses, and missing games.
 - Improved spacing and control styling in the score-sheet editor.
 - Display imported win-direction and outcome rules correctly when starting a play.
 - Redesigned the mobile navigation with recognizable dice, game-stack, and
@@ -33,6 +41,11 @@ Notable changes to MeepleMark are recorded here. The project does not have a ver
   workflow and roadmap details in dedicated documentation.
 - Consolidated project, development, deployment, and verification documentation
   and archived completed OpenSpec changes.
+
+### Fixed
+
+- Restored clear spacing between account filters and account cards in the
+  administration dashboard at phone and desktop widths.
 
 ## Initial development — 2026-09-19 to 2026-09-29
 

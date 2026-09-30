@@ -5,7 +5,7 @@ import { AccountContext, type WorkspaceState } from "./accountState";
 import { activateWorkspace, lockWorkspace, lockedAccount, onWorkspaceMessage, rememberedAccount, type RememberedAccount } from "./workspaceCoordinator";
 
 interface AccountIdentity { accountId: string; username: string; displayName: string; role: "readonly" | "user" | "admin"; capabilities: { write: boolean; admin: boolean } }
-interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }
+interface ServerIdentity { protocolVersion: number; installationId: string; recoveryEpoch: string; setup: { required: boolean }; registration: { enabled: boolean; defaultRole: "readonly" | "user" } }
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<WorkspaceState>({ kind: "loading" });

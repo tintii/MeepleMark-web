@@ -40,6 +40,7 @@
 - [x] 6.2 Add role/status controls, revoke/recovery actions and typed deletion confirmation with clear effects, progress/errors and keyboard focus handling; keep recovery secrets transient.
 - [x] 6.3 Add registration controls and paginated audit history; support direct entry, access-denied/offline states and clearing displayed admin data after loss of authorization.
 - [x] 6.4 Verify no admin dataset or mutation enters durable browser/service-worker storage; API data remains no-store and administrative writes require online success.
+- [x] 6.5 Restore consistent spacing between account filters and account cards at phone and desktop widths, with browser regression coverage.
 
 ## 7. Acceptance, deployment documentation and spec reconciliation
 
@@ -49,4 +50,4 @@
 - [x] 7.4 Exercise documented Compose fresh setup, CLI admin bootstrap, opening signup, populated upgrade, container replacement and backup/restore; preserve runtime secrets and document authorization-safe rollback and HTTPS.
 - [x] 7.5 Update README, self-hosting/persistence/verification docs and stale OpenSpec context to distinguish implemented behavior from proposals; document username-only recovery and the per-account scope of all three roles.
 - [x] 7.6 Reconcile the earlier operator-only provisioning requirement/public-signup exclusion when promoting specs, retaining unaffected guest/session/ownership/sync requirements and accurately preserving prior incomplete work.
-- [ ] 7.7 Run lint, unit/integration/browser suites, production builds and strict OpenSpec validation; record any unavailable checks without marking them passed.
+- [x] 7.7 Run lint, unit/integration/browser suites, production builds and strict OpenSpec validation; record any unavailable checks without marking them passed.

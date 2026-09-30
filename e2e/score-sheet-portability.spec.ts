@@ -126,7 +126,7 @@ test("import immediately updates win direction and outcome controls", async ({ p
 
 test("a read-only account can export but cannot import or create a mutation", async ({ page }) => {
   const session = { accountId: "11111111-1111-4111-8111-111111111111", username: "reader", displayName: "Reader", role: "readonly", capabilities: { write: false, admin: false } };
-  const meta = { protocolVersion: 1, installationId: "22222222-2222-4222-8222-222222222222", recoveryEpoch: "33333333-3333-4333-8333-333333333333", registration: { enabled: false, defaultRole: "user" } };
+  const meta = { protocolVersion: 1, installationId: "22222222-2222-4222-8222-222222222222", recoveryEpoch: "33333333-3333-4333-8333-333333333333", setup: { required: false }, registration: { enabled: false, defaultRole: "user" } };
   await page.route("**/api/v1/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === "/api/v1/auth/session") return route.fulfill({ contentType: "application/json", body: JSON.stringify(session) });

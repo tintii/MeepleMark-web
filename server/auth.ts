@@ -4,7 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Pool, PoolClient } from "pg";
 import type { ServerConfig } from "./config";
 import { inTransaction } from "./db";
-import { loginRequestSchema, passwordChangeSchema, setupRequestSchema } from "./protocol";
+import { initialAdminSetupRequestSchema, loginRequestSchema, passwordChangeSchema, setupRequestSchema } from "./protocol";
 import { capabilitiesFor, HttpError, type AccountRole, type Capabilities } from "./permissions";
 import { normalizeUsername } from "./operator";
 import { registerRequestSchema } from "./protocol";
@@ -88,6 +88,31 @@ export function requireCsrf(request: FastifyRequest, session: AuthenticatedSessi
 }
 
 export async function registerAuthRoutes(app: FastifyInstance, pool: Pool, config: ServerConfig): Promise<void> {
+  app.post("/api/v1/setup/admin", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
+    requireOrigin(request, config);
+    const input = initialAdminSetupRequestSchema.parse(request.body);
+    const username = normalizeUsername(input.username);
+    const passwordHash = await argon2.hash(input.password, ARGON2_OPTIONS);
+    const result = await inTransaction(pool, async (client) => {
+      await client.query("SELECT singleton FROM installation WHERE singleton = TRUE FOR UPDATE");
+      const existing = await client.query("SELECT 1 FROM users LIMIT 1");
+      if (existing.rowCount) throw httpError(409, "Installation setup is already complete.", "setup_complete");
+      const created = await client.query<{ id: string }>(
+        "INSERT INTO users(username, display_name, password_hash, role) VALUES ($1, $2, $3, 'admin') RETURNING id",
+        [username, input.displayName?.trim() || input.username.trim(), passwordHash],
+      );
+      await client.query("INSERT INTO sync_state(owner_id) VALUES ($1)", [created.rows[0].id]);
+      await client.query(
+        "INSERT INTO admin_audit_events(source, actor_id, target_id, action, before_summary, after_summary) VALUES ('web', $1, $1, 'installation.admin_created', '{}', $2)",
+        [created.rows[0].id, { username, role: "admin" }],
+      );
+      const session = await createSession(client, created.rows[0].id, config);
+      return { accountId: created.rows[0].id, ...session };
+    });
+    setSessionCookies(reply, config, result);
+    return reply.status(201).send({ accountId: result.accountId, csrfToken: result.csrfToken });
+  });
+
   app.post("/api/v1/auth/register", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
     requireOrigin(request, config);
     const input = registerRequestSchema.parse(request.body);

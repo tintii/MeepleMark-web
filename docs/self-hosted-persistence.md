@@ -65,8 +65,17 @@ sessions, origin checks, and request limits. Roles are `admin`, `user`, and
 `readonly`. Read-only accounts can view synchronized data but cannot upload
 mutations, guest adoption, or conflict choices.
 
+Each account owns a separate private collection, player directory, score-sheet
+state, and play history. Administrative capability governs installation and
+account management only; it does not allow an administrator to browse or
+export another account's domain records.
+
 Public registration is controlled by an administrator and is closed by
-default. It never creates an administrator. The `/admin` interface manages
+default. A fresh zero-account installation exposes a separate, one-time browser
+setup that atomically creates the first administrator; it closes as soon as any
+account exists and does not change registration policy. Operators should finish
+that setup before making the service public. Public registration never creates
+an administrator. The `/admin` interface manages
 registration policy, account roles and status, session revocation, recovery,
 confirmed account deletion, and audit events. The last enabled administrator
 with an initialized password cannot be demoted, disabled, or deleted.

@@ -4,7 +4,7 @@ import { closeWorkspaceConnectionsForTests, openWorkspaceDb, putScopedRecord } f
 import { acknowledgeMutation, applyChangePage, freezeMutation, syncStatus, uploadPending } from "./client";
 import { keepLocalVersion, useServerVersion, type ConflictRecord } from "./conflicts";
 
-const account: RememberedAccount = { kind: "account", origin: "https://example.test", installationId: "11111111-1111-4111-8111-111111111111", recoveryEpoch: "22222222-2222-4222-8222-222222222222", accountId: "33333333-3333-4333-8333-333333333333", protocolVersion: 1, username: "a", displayName: "A", role: "user", capabilities: { write: true, admin: false }, registration: { enabled: false, defaultRole: "user" } };
+const account: RememberedAccount = { kind: "account", origin: "https://example.test", installationId: "11111111-1111-4111-8111-111111111111", recoveryEpoch: "22222222-2222-4222-8222-222222222222", accountId: "33333333-3333-4333-8333-333333333333", protocolVersion: 1, username: "a", displayName: "A", role: "user", capabilities: { write: true, admin: false }, setup: { required: false }, registration: { enabled: false, defaultRole: "user" } };
 beforeEach(async () => { await closeWorkspaceConnectionsForTests(); await activateWorkspace(account, false); });
 
 describe("browser synchronization transactions", () => {
