@@ -4,6 +4,8 @@ MeepleMark is a local-first board-game scorepad for phones and desktops. It
 records games, players, reusable score sheets, drafts, results, and play history
 without requiring an account or a network connection.
 
+This is an LLM-assisted project.
+
 <p>
   <div>Desktop view:</div>
   <img src="docs/images/play-history.png" alt="MeepleMark play history on desktop" width="720"> 
